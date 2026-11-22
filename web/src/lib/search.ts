@@ -5,6 +5,7 @@ import { localities } from "@/data/localities";
 export interface Refinements {
   maxMetroKm?: number;
   maxItParkKm?: number;
+  maxHospitalKm?: number;
   avoidFlood?: boolean;
   minSchools2km?: number;
 }
@@ -17,6 +18,8 @@ export interface Filters {
   beds: number | null;
   segment: "all" | "new" | "luxury";
   refine: Refinements;
+  /** Exact result set chosen by the assistant (its search uses a radius, not just names). */
+  ids?: string[];
 }
 
 export const DEFAULT_FILTERS: Filters = {
@@ -76,6 +79,7 @@ function matchesQuery(l: Listing, q: string) {
 function passesRefinements(l: Listing, r: Refinements) {
   if (r.maxMetroKm != null && !((l.nearby.metro?.km ?? 99) <= r.maxMetroKm)) return false;
   if (r.maxItParkKm != null && !((l.nearby.it_park?.km ?? 99) <= r.maxItParkKm)) return false;
+  if (r.maxHospitalKm != null && !((l.nearby.hospital?.km ?? 99) <= r.maxHospitalKm)) return false;
   if (r.avoidFlood && l.flood.level !== "low") return false;
   if (r.minSchools2km != null && l.counts.schools2km < r.minSchools2km) return false;
   return true;
@@ -96,7 +100,13 @@ function baseFilter(all: Listing[], f: Filters): Listing[] {
 }
 
 export function filterListings(all: Listing[], f: Filters): Listing[] {
-  return baseFilter(all, f).filter((l) => passesRefinements(l, f.refine));
+  return baseOrIds(all, f).filter((l) => passesRefinements(l, f.refine));
+}
+
+function baseOrIds(all: Listing[], f: Filters) {
+  if (!f.ids) return baseFilter(all, f);
+  const set = new Set(f.ids);
+  return all.filter((l) => set.has(l.id));
 }
 
 /**
@@ -144,7 +154,7 @@ export function describeFilters(f: Filters, budgetLabel?: string) {
   parts.push(f.type === "any" ? "properties" : `${f.type}s`);
   parts.push(f.purpose === "rent" ? "for rent" : "for sale");
   if (f.query.trim()) parts.push(`in ${f.query.split(",")[0]}`);
-  if (budgetLabel && f.budgetMax) parts.push(budgetLabel.charAt(0).toLowerCase() + budgetLabel.slice(1));
+  if (f.budgetMax) parts.push((budgetLabel ?? budgetText(f.budgetMax, f.purpose)).replace(/^Up/, "up"));
   return parts.join(" ");
 }
 
@@ -157,6 +167,7 @@ export type Suggestion =
 export const REFINE_LABEL: Record<keyof Refinements, (v: number | boolean) => string> = {
   maxMetroKm: (v) => `Within ${v} km of metro`,
   maxItParkKm: (v) => `Within ${v} km of an IT park`,
+  maxHospitalKm: (v) => `Within ${v} km of a hospital`,
   avoidFlood: () => "Outside flood zones",
   minSchools2km: (v) => `${v}+ schools within 2 km`,
 };
@@ -166,7 +177,7 @@ export const REFINE_LABEL: Record<keyof Refinements, (v: number | boolean) => st
  * A suggestion only appears when it would actually narrow the list (and not empty it).
  */
 export function suggestNext(f: Filters, all: Listing[]): Suggestion[] {
-  const pool = baseFilter(all, f).filter((l) => passesRefinements(l, f.refine));
+  const pool = baseOrIds(all, f).filter((l) => passesRefinements(l, f.refine));
   const n = pool.length;
   const out: Suggestion[] = [];
   const useful = (c: number) => c > 0 && c < n;
@@ -202,3 +213,52 @@ export function suggestNext(f: Filters, all: Listing[]): Suggestion[] {
 }
 
 const dist = (a: [number, number], b: [number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+/* ───────────── Assistant → page ───────────── */
+
+/** Filters as the assistant API returns them. */
+export interface AssistantFilters {
+  purpose: "buy" | "rent";
+  type?: PropertyType;
+  beds?: number;
+  budgetMax?: number;
+  locality?: string;
+  city?: string;
+  near?: string;
+  maxMetroKm?: number;
+  maxItParkKm?: number;
+  maxHospitalKm?: number;
+  avoidFlood?: boolean;
+  minSchools2km?: number;
+}
+
+export function fromAssistant(a: AssistantFilters): Filters {
+  const refine: Refinements = {};
+  if (a.maxMetroKm != null) refine.maxMetroKm = a.maxMetroKm;
+  if (a.maxItParkKm != null) refine.maxItParkKm = a.maxItParkKm;
+  if (a.maxHospitalKm != null) refine.maxHospitalKm = a.maxHospitalKm;
+  if (a.avoidFlood) refine.avoidFlood = true;
+  if (a.minSchools2km != null) refine.minSchools2km = a.minSchools2km;
+  const near: Record<string, string> = { infopark: "Infopark", technopark: "Technopark", smartcity: "SmartCity", cyberpark: "Cyberpark", lulu: "LuLu", airport: "Airport" };
+  return {
+    purpose: a.purpose,
+    query: a.locality ?? (a.near ? near[a.near] ?? a.near : undefined) ?? (a.city === "Thiruvananthapuram" ? "Thiruvananthapuram" : a.city) ?? "",
+    type: a.type === "house" ? "villa" : a.type ?? "any",
+    budgetMax: a.budgetMax ?? null,
+    beds: a.beds ?? null,
+    segment: "all",
+    refine,
+  };
+}
+
+/** Event the assistant fires to show its search on the home page. */
+export const APPLY_SEARCH_EVENT = "kr:apply-search";
+export function applySearchOnPage(f: AssistantFilters, ids?: string[]) {
+  window.dispatchEvent(new CustomEvent(APPLY_SEARCH_EVENT, { detail: { ...fromAssistant(f), ids } }));
+}
+
+/** "Up to ₹70 L" / "Up to ₹25k/mo" for any budget (the assistant can set values outside the presets). */
+export function budgetText(v: number, purpose: Purpose) {
+  if (purpose === "rent") return `Up to ₹${v >= 1e5 ? `${+(v / 1e5).toFixed(1)} L` : `${Math.round(v / 1000)}k`}/mo`;
+  return `Up to ₹${v >= 1e7 ? `${+(v / 1e7).toFixed(2)} Cr` : `${+(v / 1e5).toFixed(1)} L`}`;
+}

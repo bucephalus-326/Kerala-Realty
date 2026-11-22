@@ -45,6 +45,28 @@ New `api/` service: Node + Express + MongoDB (Mongoose), TypeScript.
 - **Audit trail** of sign-ins, failed logins, registrations, bookings and concierge requests.
 - 18 API tests (`cd api && npm test`) run against a real temporary MongoDB.
 
+## Stage 5: AI assistant (done)
+A chat assistant on every page (side panel on tablet/desktop, bottom sheet on phones) that searches verified listings and drives the home page: **our recommendation → all matching listings → next questions**.
+
+How it stays within free API limits:
+
+| Step | What happens | AI cost |
+|---|---|---|
+| 1. Rules | English + Manglish parser (`api/src/ai/parse.ts`): place, budget, BHK, type, buy/rent, metro, flood, schools, hospital, compare, call-back | free |
+| 2. Structured output | Unclear searches go to Gemini with a JSON schema; the result is validated with Zod before use | 1 call |
+| 3. RAG | Hard filters + 2.5 km radius in MongoDB, then ranking by budget fit, K-RERA, commute, flood risk and Gemini embeddings of each listing | embeddings once per listing |
+| 4. Agent | Open questions ("is this villa fairly priced?") run a tool-calling loop over our data: `search_listings`, `find_listing`, `listing_details` (with price check), `compare_localities`, `offer_callback`; max 4 steps | 1–4 calls |
+| 5. Guard rails | 24 h answer cache, 15 AI answers per visitor per day, 800 per day site-wide, retry then fall back across models (and optional Groq/OpenRouter keys); if all fail, rules still answer | – |
+
+- **Personalised, with consent:** with "personalisation" allowed, device, time zone and currency shape the suggestions (NRI time zones get video-tour and advisor prompts); with "location" allowed, the city comes from Vercel's edge headers (`web/src/app/api/geo`), no third-party lookup. A suggestion such as "Looking for a ₹70 lakh flat in Kakkanad?" (the city's median flat price) appears a few seconds after landing.
+- **Lead capture:** call-back form in the chat with explicit consent; leads show for the listing's owner/agent and for admins.
+- **Evals:** 30 English/Manglish cases in `api/evals/cases.json`. `npm run eval` scores the rules (free); `npm run eval -- --llm` scores Gemini's structured output. Latest: rules 30/30, Gemini 29/30 (the miss was a provider outage). Reports in `api/evals/`.
+- **Monitoring:** every turn logs mode, intent, latency, tokens, tools and errors (no message text). Admins see it on their dashboard.
+
+Set `GEMINI_API_KEY` on the API host to turn the AI on; without it the assistant runs on rules only. See `api/.env.example` for the optional fallback keys and limits.
+
+![Assistant](docs/screenshots/16-assistant-flow.jpg)
+
 ## Run locally
 
 Two terminals:
@@ -66,6 +88,9 @@ Demo accounts (local only) are on the sign-in page: buyer, NRI, owner, agent and
 | `MONGODB_URI` | api | MongoDB Atlas connection string (empty locally = in-memory) |
 | `JWT_SECRET` | api | long random string; required in production |
 | `SEED_DEMO_USERS` | api | `true` seeds demo accounts in production |
+| `GEMINI_API_KEY` | api | turns on the AI assistant (free tier works) |
+| `GROQ_API_KEY`, `OPENROUTER_API_KEY` | api | optional free fallbacks when Gemini is busy |
+| `AI_DAILY_LIMIT`, `AI_GLOBAL_DAILY_LIMIT` | api | AI answers per visitor / per day (default 15 / 800) |
 
 Listings and places are generated data (see [`data/README.md`](data/README.md)). Photos come from Unsplash (free licence) and are stored in `web/public/img`.
 

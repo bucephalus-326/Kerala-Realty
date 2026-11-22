@@ -11,7 +11,9 @@ import {
   Loader2,
   LogOut,
   MessageCircle,
+  Phone,
   Send,
+  Sparkles,
   ShieldCheck,
   Users,
   Video,
@@ -562,8 +564,120 @@ function PortalDashboard({ user }: { user: User }) {
           </div>
         )}
       </Panel>
+      <LeadsPanel path="/leads/mine" />
       <PreferencesPanel />
     </div>
+  );
+}
+
+interface Lead {
+  _id: string;
+  name: string;
+  phone: string;
+  preferredTime?: string;
+  timeZone?: string;
+  listingIds: string[];
+  source: string;
+  status: string;
+  createdAt: string;
+}
+
+function LeadsPanel({ path }: { path: string }) {
+  const [items, setItems] = useState<Lead[] | null>(null);
+  useEffect(() => {
+    api<{ items: Lead[] }>(path).then((r) => setItems(r.items)).catch(() => setItems([]));
+  }, [path]);
+  return (
+    <Panel title="Leads" icon={Phone} action={<span className="text-sm text-ink-3">{items?.length ?? ""}</span>}>
+      {items === null ? (
+        <Loader2 className="h-5 w-5 animate-spin text-ink-3" />
+      ) : items.length === 0 ? (
+        <Empty text="No call-back requests yet. They arrive from the assistant and listing pages." />
+      ) : (
+        <ul className="divide-y divide-line">
+          {items.map((l) => (
+            <li key={l._id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+              <span className="min-w-0">
+                <span className="block font-medium">{l.name}</span>
+                <span className="block text-xs text-ink-3">
+                  <a href={`tel:${l.phone.replace(/[^+\d]/g, "")}`} className="text-brand">{l.phone}</a> · {l.preferredTime ?? "Any time"}
+                  {l.timeZone && l.timeZone !== "Asia/Kolkata" ? ` · ${l.timeZone.split("/").pop()?.replace(/_/g, " ")}` : ""}
+                </span>
+              </span>
+              <span className="shrink-0 text-right text-xs text-ink-3">
+                <span className="block">{l.listingIds.length ? `${l.listingIds.length} home${l.listingIds.length > 1 ? "s" : ""}` : "General"}</span>
+                <span className="block">{new Date(l.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · {l.source}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+interface AiStats {
+  byMode: { _id: string; n: number }[];
+  latency: { _id: string; avgMs: number; tokens: number; zeroResults: number }[];
+  tools: { _id: string; n: number }[];
+  errors: { _id: string; error: string; createdAt: string }[];
+}
+
+const MODE_LABEL: Record<string, string> = { rule: "Rules (free)", llm: "AI (Gemini)", cache: "Cache", fallback: "Fallback" };
+
+function AssistantStats() {
+  const [d, setD] = useState<AiStats | null>(null);
+  useEffect(() => {
+    api<AiStats>("/admin/ai-stats").then(setD).catch(() => {});
+  }, []);
+  const total = d?.byMode.reduce((a, m) => a + m.n, 0) ?? 0;
+  return (
+    <Panel title="Assistant, last 7 days" icon={Sparkles} action={<span className="text-sm text-ink-3">{total} answers</span>}>
+      {!d ? (
+        <Loader2 className="h-5 w-5 animate-spin text-ink-3" />
+      ) : (
+        <div className="space-y-4 text-sm">
+          <ul className="space-y-2">
+            {["rule", "llm", "cache", "fallback"].map((m) => {
+              const n = d.byMode.find((x) => x._id === m)?.n ?? 0;
+              const lat = d.latency.find((x) => x._id === m);
+              return (
+                <li key={m}>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-ink-2">{MODE_LABEL[m]}</span>
+                    <span className="tabular-nums text-ink-3">
+                      {n}
+                      {lat ? ` · ${Math.round(lat.avgMs)} ms avg` : ""}
+                      {lat?.tokens ? ` · ${lat.tokens.toLocaleString("en-IN")} tokens` : ""}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-muted">
+                    <div className={clsx("h-full rounded-full", m === "llm" ? "bg-gold" : m === "fallback" ? "bg-danger" : "bg-brand")} style={{ width: `${total ? (n / total) * 100 : 0}%` }} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {d.tools.length > 0 && (
+            <p className="text-xs text-ink-3">
+              Agent tools used: {d.tools.map((t) => `${t._id} ×${t.n}`).join(", ")}
+            </p>
+          )}
+          {d.errors.length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-medium text-ink-2">Recent provider errors</p>
+              <ul className="space-y-1">
+                {d.errors.slice(0, 4).map((e) => (
+                  <li key={e._id} className="truncate font-mono text-[11px] text-danger" title={e.error}>
+                    {e.error}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </Panel>
   );
 }
 
@@ -606,6 +720,8 @@ function AdminDashboard() {
           ))}
         </ul>
       </Panel>
+      <AssistantStats />
+      <LeadsPanel path="/admin/leads" />
       <p className="text-xs text-ink-3 lg:col-span-2">Approvals, verification and moderation arrive with the full admin console.</p>
     </div>
   );

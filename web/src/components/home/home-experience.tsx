@@ -28,12 +28,14 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LOCALITIES, listings, TYPE_LABEL, type PropertyType } from "@/data/listings";
 import { CURRENCIES, formatPrice, regionFromTimeZone } from "@/lib/currency";
 import { localities } from "@/data/localities";
 import {
+  APPLY_SEARCH_EVENT,
   BUDGETS,
+  budgetText,
   DEFAULT_FILTERS,
   describeFilters,
   filterListings,
@@ -81,9 +83,18 @@ export function HomeExperience() {
   };
   const applyPartial = (p: Partial<Filters>) => apply({ ...DEFAULT_FILTERS, purpose: draft.purpose, ...p });
 
+  // The assistant can drive this page: its searches show here as recommendation → listings → next questions.
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+  useEffect(() => {
+    const on = (e: Event) => applyRef.current((e as CustomEvent<Filters>).detail);
+    window.addEventListener(APPLY_SEARCH_EVENT, on);
+    return () => window.removeEventListener(APPLY_SEARCH_EVENT, on);
+  }, []);
+
   return (
     <>
-      <Hero draft={draft} setDraft={setDraft} onSearch={() => apply(draft)} onPrompt={applyPartial} />
+      <Hero draft={draft} setDraft={setDraft} onSearch={() => apply({ ...draft, ids: undefined })} onPrompt={applyPartial} />
       <CategoryRail applied={applied} onPick={applyPartial} />
       <div ref={resultsRef} className="scroll-mt-20">
         <Results
@@ -305,7 +316,13 @@ function SearchPanel({
             ariaLabel="Budget"
             value={String(draft.budgetMax)}
             onChange={(v) => set("budgetMax", v === "null" ? null : Number(v))}
-            options={BUDGETS[draft.purpose].map((b) => ({ value: String(b.value), label: b.label }))}
+            options={[
+              ...BUDGETS[draft.purpose].map((b) => ({ value: String(b.value), label: b.label })),
+              // A budget set by the assistant that isn't a preset still shows correctly.
+              ...(draft.budgetMax !== null && !BUDGETS[draft.purpose].some((b) => b.value === draft.budgetMax)
+                ? [{ value: String(draft.budgetMax), label: budgetText(draft.budgetMax, draft.purpose) }]
+                : []),
+            ]}
           />
         </Field>
 

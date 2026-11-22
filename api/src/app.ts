@@ -6,6 +6,7 @@ import { config } from "./config.js";
 import { readSession, requireJson } from "./auth/session.js";
 import { errorHandler, HttpError } from "./lib/http.js";
 import { adminRouter } from "./routes/admin.js";
+import { aiAdminRouter, aiRouter, leadsRouter } from "./routes/ai.js";
 import { authRouter } from "./routes/auth.js";
 import { consentRouter } from "./routes/consent.js";
 import { listingsRouter } from "./routes/listings.js";
@@ -32,6 +33,9 @@ export function createApp() {
   app.use("/nri", nriRouter);
   app.use("/consent", consentRouter);
   app.use("/admin", adminRouter);
+  app.use("/admin", aiAdminRouter);
+  app.use("/ai", aiRouter);
+  app.use("/leads", leadsRouter);
 
   app.use((_req, _res, next) => next(new HttpError(404, "Not found", "not_found")));
   app.use(errorHandler);

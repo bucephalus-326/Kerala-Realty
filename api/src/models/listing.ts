@@ -38,6 +38,8 @@ const listingSchema = new Schema(
     highlights: Schema.Types.Mixed,
     flood: Schema.Types.Mixed,
     postedAt: String,
+    /** 768-d Gemini embedding of the listing text, for semantic ranking. Never sent to clients. */
+    embedding: { type: [Number], default: undefined, select: false },
   },
   { timestamps: true },
 );

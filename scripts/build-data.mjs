@@ -289,7 +289,7 @@ function enrich(l) {
       if (!best || d < best.km) best = { name: p.name, km: d, status: p.status };
     }
     if (best && best.km <= 40)
-      nearby[cat] = { name: best.name, km: +best.km.toFixed(1), ...(best.status && { status: best.status }) };
+      nearby[cat] = { name: best.name, km: +Math.max(0.1, best.km).toFixed(1), ...(best.status && { status: best.status }) };
   }
   const counts = {
     schools2km: (byCat.school ?? []).filter((p) => km(l.coords, p.coords) <= 2).length,
@@ -345,7 +345,7 @@ const localityOut = localities.map(({ weight, ...l }) => {
     let best = null;
     for (const p of byCat[cat] ?? []) {
       const d = km(l.coords, p.coords);
-      if (!best || d < best.km) best = { name: p.name.replace(/ Station$/, ""), km: +d.toFixed(1), ...(p.status && { status: p.status }) };
+      if (!best || d < best.km) best = { name: p.name.replace(/ Station$/, ""), km: +Math.max(0.1, d).toFixed(1), ...(p.status && { status: p.status }) };
     }
     return best;
   };
