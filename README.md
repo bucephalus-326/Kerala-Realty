@@ -67,14 +67,12 @@ Set `GEMINI_API_KEY` on the API host to turn the AI on; without it the assistant
 
 ![Assistant](docs/screenshots/16-assistant-flow.jpg)
 
-## Stage 6: owner and agent portal (in progress: review fixes pending)
+## Stage 6: owner and agent portal (done)
 - `/portal`: listings with views, saves, visits and leads; visit requests (confirm, decline, mark done; buyer contact shared only after confirming); enquiries; document vault and profile verification uploads.
 - Six-step listing editor: basics, location (map pin; nearby places and flood risk computed on save), details (price, area, amenities, K-RERA with format check, new-project fields for agents), photos (resized in the browser to WebP, reorder, cover) and video link, private documents (SHA-256 fingerprint, every view audited), review.
-- Lifecycle: draft → in review → live → sold / rented / paused. Price and description edits stay live; location and type changes go back to review. Admin approve/reject endpoint (UI comes with the admin console).
+- Lifecycle: draft → in review → live → sold / rented / paused. Price, description, video and amenity edits stay live; photo, location and type changes go back to review. Admin approve/reject endpoint (UI comes with the admin console).
 - Public listing page `/listings/[id]` (server-rendered from the API) and the whole site now reads live listings from the API, so new homes appear in search, the map and the assistant.
-- Files are stored in MongoDB GridFS (no extra service). 47 API tests.
-
-Open items from the stage 6 Ponytail review are listed in the commit message and will be fixed before merging.
+- Files are stored in MongoDB GridFS (no extra service), with a per-account cap (`UPLOAD_MAX_FILES`, default 80; `UPLOAD_MAX_MB`, default 60) so the free 512 MB database can't be filled by one account. 53 API tests.
 
 ## Run locally
 
@@ -100,6 +98,7 @@ Demo accounts (local only) are on the sign-in page: buyer, NRI, owner, agent and
 | `GEMINI_API_KEY` | api | turns on the AI assistant (free tier works) |
 | `GROQ_API_KEY`, `OPENROUTER_API_KEY` | api | optional free fallbacks when Gemini is busy |
 | `AI_DAILY_LIMIT`, `AI_GLOBAL_DAILY_LIMIT` | api | AI answers per visitor / per day (default 15 / 800) |
+| `UPLOAD_MAX_FILES`, `UPLOAD_MAX_MB` | api | per-account storage cap (default 80 files / 60 MB) |
 
 Listings and places are generated data (see [`data/README.md`](data/README.md)). Photos come from Unsplash (free licence) and are stored in `web/public/img`.
 

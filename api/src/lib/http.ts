@@ -27,6 +27,10 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   if (err instanceof HttpError) {
     return res.status(err.status).json({ error: { code: err.code, message: err.message } });
   }
+  // Body-parser errors (they carry a status and a type).
+  const e = err as { status?: number; type?: string };
+  if (e?.status === 413) return res.status(413).json({ error: { code: "too_large", message: "That file is too large" } });
+  if (e?.type === "entity.parse.failed") return res.status(400).json({ error: { code: "bad_json", message: "The request body isn't valid JSON" } });
   console.error(err);
   res.status(500).json({ error: { code: "server_error", message: "Something went wrong" } });
 }

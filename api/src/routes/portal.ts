@@ -151,15 +151,32 @@ portalRouter.get("/listings/:id", async (req, res) => {
   res.json({ ...portalView(l.toObject()), missing: readinessErrors(asDraft(l)) });
 });
 
-/** Price, description, photos order, video and amenities apply live; anything else on a live listing goes back to review. */
-const LIVE_EDITABLE = new Set(["price", "description", "videoUrl", "amenities", "images"]);
+/**
+ * Price, description, video and amenities apply live. Anything else on a live
+ * listing, including photos (so an approved listing can't swap in another house),
+ * goes back to review.
+ */
+const LIVE_EDITABLE = new Set(["price", "description", "videoUrl", "amenities"]);
+/** Optional fields an owner may clear by sending null or "". */
+const CLEARABLE = ["description", "videoUrl", "beds", "baths", "builtUpSqft", "landCents", "furnishing", "amenities", "possession"] as const;
 
 portalRouter.patch("/listings/:id", async (req, res) => {
   const l = await own(req, req.params.id);
-  const d = parse(draftSchema.partial(), req.body);
+  const body = { ...(req.body as Record<string, unknown>) };
+  const cleared: string[] = [];
+  for (const [k, v] of Object.entries(body)) {
+    if (v !== null && v !== "") continue;
+    delete body[k];
+    if ((CLEARABLE as readonly string[]).includes(k) && (asDraft(l) as Record<string, unknown>)[k] != null) cleared.push(k);
+  }
+  const d = parse(draftSchema.partial(), body);
   if (d.isNewProject && req.user!.role !== "agent") throw new HttpError(403, "Only agents and builders can list new projects", "forbidden");
-  const changed = Object.keys(d).filter((k) => JSON.stringify((d as Record<string, unknown>)[k]) !== JSON.stringify((asDraft(l) as Record<string, unknown>)[k]));
+  const changed = [
+    ...Object.keys(d).filter((k) => JSON.stringify((d as Record<string, unknown>)[k]) !== JSON.stringify((asDraft(l) as Record<string, unknown>)[k])),
+    ...cleared,
+  ];
   applyDraft(l, d);
+  for (const k of cleared) l.set(k, undefined);
   let reReview = false;
   if (["published", "sold", "rented", "unavailable"].includes(l.status) && changed.some((k) => !LIVE_EDITABLE.has(k))) {
     l.status = "pending";

@@ -74,6 +74,12 @@ export async function nextListingId() {
 }
 
 /** One row per listing, day and visitor: deduplicated page views. */
-const viewSchema = new Schema({ listingId: { type: String, index: true }, day: String, visitor: String });
+const viewSchema = new Schema({
+  listingId: { type: String, index: true },
+  day: String,
+  visitor: String,
+  // Stats read at most 30 days back; rows expire after 90 so the collection stays small.
+  createdAt: { type: Date, default: Date.now, expires: 90 * 86_400 },
+});
 viewSchema.index({ listingId: 1, day: 1, visitor: 1 }, { unique: true });
 export const ListingView = model("ListingView", viewSchema);

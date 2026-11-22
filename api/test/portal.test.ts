@@ -2,6 +2,8 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { connectDb, disconnectDb } from "../src/db.js";
+import mongoose from "mongoose";
+import { ListingView } from "../src/models/listing.js";
 import { DEMO_PASSWORD, seedIfEmpty } from "../src/scripts/seed-data.js";
 
 const app = createApp();
@@ -130,6 +132,57 @@ describe("listing lifecycle", () => {
     expect(res.status).toBe(403);
     const ok = await agent.post("/portal/listings").send({ title: "Tower Phase 2", purpose: "buy", type: "apartment", isNewProject: true });
     expect(ok.status).toBe(201);
+  });
+});
+
+describe("review fixes", () => {
+  it("lets owners clear optional fields", async () => {
+    const res = await owner.patch(`/portal/listings/${draftId}`).send({ videoUrl: null, description: "A bright family home near the metro, recently repainted, with a sit-out." });
+    expect(res.body).not.toHaveProperty("videoUrl");
+    expect(res.body.status).toBe("published"); // clearing a live-editable field stays live
+  });
+
+  it("sends photo changes on a live listing back to review", async () => {
+    const res = await owner.patch(`/portal/listings/${draftId}`).send({ images: [photoUrl, "/img/villa-1.jpg"] });
+    expect(res.body.status).toBe("pending");
+    expect(res.body.reReview).toBe(true);
+    await admin.post(`/admin/listings/${draftId}/review`).send({ decision: "approve" });
+  });
+
+  it("caps storage per account and rejects oversized photos", async () => {
+    process.env.UPLOAD_MAX_FILES = "1";
+    try {
+      const fresh = await signIn("agent@example.com");
+      expect((await upload(fresh, "/media", PNG, "image/png")).status).toBe(201);
+      const over = await upload(fresh, "/media", PNG, "image/png");
+      expect(over.status).toBe(413);
+      expect(over.body.error.code).toBe("quota_exceeded");
+    } finally {
+      delete process.env.UPLOAD_MAX_FILES;
+    }
+    const big = Buffer.concat([PNG, Buffer.alloc(4 * 1024 * 1024)]);
+    const tooBig = await upload(owner, "/media", big, "image/png");
+    expect(tooBig.status).toBe(413);
+    expect(tooBig.body.error.code).toBe("too_large");
+  });
+
+  it("answers 404 for a damaged file instead of crashing", async () => {
+    const up = await upload(owner, "/media", PNG, "image/png");
+    await mongoose.connection.db!.collection("media.chunks").deleteMany({ files_id: new mongoose.Types.ObjectId(up.body.id) });
+    const res = await request(app).get(`/media/${up.body.id}`);
+    expect([404, 200]).toContain(res.status); // headers may already be out for a partial file
+    expect((await request(app).get("/health")).status).toBe(200);
+  });
+
+  it("does not count views for made-up or hidden listings", async () => {
+    await request(app).post("/listings/L999/view").send({});
+    await request(app).post("/listings/not-an-id/view").send({});
+    expect(await ListingView.countDocuments({ listingId: { $in: ["L999", "not-an-id"] } })).toBe(0);
+  });
+
+  it("returns 400 for malformed JSON", async () => {
+    const res = await owner.patch(`/portal/listings/${draftId}`).set("Content-Type", "application/json").send("{bad");
+    expect(res.status).toBe(400);
   });
 });
 

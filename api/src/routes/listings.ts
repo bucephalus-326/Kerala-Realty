@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { requirePermission } from "../auth/rbac.js";
 import { notFound, parse } from "../lib/http.js";
@@ -39,8 +40,12 @@ listingsRouter.get("/", requirePermission("listings:read"), async (req, res) => 
 });
 
 /** Count a page view once per visitor per day. Never fails the page. */
-listingsRouter.post("/:id/view", async (req, res) => {
+const viewLimiter = rateLimit({ windowMs: 10 * 60_000, limit: 120, standardHeaders: "draft-7", legacyHeaders: false });
+
+listingsRouter.post("/:id/view", viewLimiter, async (req, res) => {
   const id = String(req.params.id);
+  // Only real, live listings are counted; made-up ids never create rows.
+  if (!/^L\d{3,6}$/.test(id) || !(await Listing.exists({ _id: id, status: "published" }))) return res.json({ ok: true });
   const visitor = req.user ? `u:${req.user.id}` : `a:${String(req.cookies?.kr_anon ?? req.ip)}`;
   await ListingView.updateOne(
     { listingId: id, day: new Date().toISOString().slice(0, 10), visitor },

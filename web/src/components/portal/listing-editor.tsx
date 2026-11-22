@@ -73,9 +73,9 @@ export function ListingEditor({ id }: { id?: string }) {
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
-  /** Save what changed, then move to `to`. */
+  /** Save what changed, then move to `to`. Resolves false when the save was rejected. */
   const save = useCallback(
-    async (to?: number) => {
+    async (to?: number): Promise<boolean> => {
       setBusy(true);
       setErrors({});
       setNotice(null);
@@ -86,12 +86,13 @@ export function ListingEditor({ id }: { id?: string }) {
             body: { title: form.title, purpose: form.purpose, type: form.type, description: form.description || undefined },
           });
           router.replace(`/portal/listings/${created.id}?step=2`);
-          return;
+          return true;
         }
         const patch: Record<string, unknown> = {};
         for (const k of Object.keys(form) as (keyof Form)[]) {
           if (["id", "status", "missing", "stats", "nearby", "highlights", "flood", "reviewNote", "pinned"].includes(k)) continue;
-          if (JSON.stringify(form[k]) !== JSON.stringify(server?.[k as keyof PortalListing])) patch[k] = form[k] === "" ? undefined : form[k];
+          // A cleared field is sent as null (JSON drops undefined), so the server removes it.
+          if (JSON.stringify(form[k]) !== JSON.stringify(server?.[k as keyof PortalListing])) patch[k] = form[k] === "" || form[k] === undefined ? null : form[k];
         }
         if (Object.keys(patch).length) {
           const updated = await api<PortalListing & { reReview?: boolean }>(`/portal/listings/${id}`, { method: "PATCH", body: patch });
@@ -100,12 +101,14 @@ export function ListingEditor({ id }: { id?: string }) {
           if (updated.reReview) setNotice("Saved. Because the location or details changed, the listing is back in review.");
         }
         if (to !== undefined) setStep(to);
+        return true;
       } catch (e) {
         const err = e as ApiError;
         const fields = Object.fromEntries(Object.entries(err.fields ?? {}).map(([k, v]) => [k, v[0]]));
         setErrors(Object.keys(fields).length ? fields : { _: err.message });
         const first = Object.keys(fields).map((k) => FIELD_STEP[k]).filter((n) => n !== undefined);
         if (first.length) setStep(Math.min(...first));
+        return false;
       } finally {
         setBusy(false);
       }
@@ -114,7 +117,7 @@ export function ListingEditor({ id }: { id?: string }) {
   );
 
   const submit = async () => {
-    await save();
+    if (!(await save())) return; // never submit an older version than the owner sees
     setBusy(true);
     try {
       await api(`/portal/listings/${id}/submit`, { method: "POST" });
@@ -197,7 +200,7 @@ export function ListingEditor({ id }: { id?: string }) {
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit for review
             </button>
           ) : (
-            <button onClick={() => save().then(() => router.push("/portal"))} disabled={busy} className={buttonClass("primary", "md")}>
+            <button onClick={() => save().then((ok) => ok && router.push("/portal"))} disabled={busy} className={buttonClass("primary", "md")}>
               <Check className="h-4 w-4" /> {live ? "Save changes" : "Done"}
             </button>
           )}
@@ -639,7 +642,7 @@ function Review({ form, missing, errors, goTo }: { form: Form; missing: Record<s
         ))}
       </dl>
       <p className="flex items-center gap-2 text-xs text-ink-3">
-        <Plus className="h-3.5 w-3.5" /> After approval, price, photos, description and amenities can be changed any time without another review.
+        <Plus className="h-3.5 w-3.5" /> After approval, price, description and amenities can be changed any time. New or changed photos, location and type go back to a quick review.
       </p>
     </div>
   );

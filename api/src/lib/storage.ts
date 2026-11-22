@@ -4,6 +4,7 @@
  */
 import { createHash } from "node:crypto";
 import mongoose from "mongoose";
+import { HttpError } from "./http.js";
 
 type Bucket = "media" | "documents";
 const bucket = (name: Bucket) => new mongoose.mongo.GridFSBucket(mongoose.connection.db!, { bucketName: name });
@@ -24,8 +25,42 @@ export async function fileInfo(name: Bucket, id: string) {
   return bucket(name).find({ _id: new mongoose.Types.ObjectId(id) }).next();
 }
 
-export function openFile(name: Bucket, id: string) {
-  return bucket(name).openDownloadStream(new mongoose.Types.ObjectId(id));
+/** Stream a file to the response. A damaged or missing file ends that response, never the process. */
+export function sendFile(name: Bucket, id: string, res: import("express").Response) {
+  const stream = bucket(name).openDownloadStream(new mongoose.Types.ObjectId(id));
+  stream.on("error", () => {
+    if (!res.headersSent) res.status(404).json({ error: { code: "not_found", message: "File not found" } });
+    else res.destroy();
+  });
+  stream.pipe(res);
+}
+
+/** Files and bytes a user has stored across both buckets. */
+export async function usageOf(ownerId: string) {
+  let files = 0;
+  let bytes = 0;
+  for (const b of ["media", "documents"] as const) {
+    const [row] = await mongoose.connection
+      .db!.collection(`${b}.files`)
+      .aggregate([{ $match: { "metadata.ownerId": ownerId } }, { $group: { _id: null, n: { $sum: 1 }, bytes: { $sum: "$length" } } }])
+      .toArray();
+    files += row?.n ?? 0;
+    bytes += row?.bytes ?? 0;
+  }
+  return { files, bytes };
+}
+
+/**
+ * Per-user storage cap, so one account can't fill the free database
+ * (Atlas M0 has 512 MB). Read per call so it can be tuned without a restart.
+ */
+export async function assertQuota(ownerId: string, incoming: number) {
+  const maxFiles = Number(process.env.UPLOAD_MAX_FILES ?? 80);
+  const maxBytes = Number(process.env.UPLOAD_MAX_MB ?? 60) * 1024 * 1024;
+  const u = await usageOf(ownerId);
+  if (u.files + 1 > maxFiles || u.bytes + incoming > maxBytes) {
+    throw new HttpError(413, `Storage limit reached (${maxFiles} files or ${maxBytes / 1024 / 1024} MB per account). Delete unused files or contact support.`, "quota_exceeded");
+  }
 }
 
 export async function listFiles(name: Bucket, filter: Record<string, unknown>) {
