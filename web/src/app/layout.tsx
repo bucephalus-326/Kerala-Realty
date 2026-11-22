@@ -11,8 +11,16 @@ const display = Sora({ subsets: ["latin"], variable: "--font-display", weight: [
 const body = Inter({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
   title: `${site.name}: Verified Kerala Real Estate`,
   description: site.description,
+  openGraph: {
+    siteName: site.name,
+    type: "website",
+    locale: "en_IN",
+    images: [{ url: "/img/hero-backwater.jpg", alt: "Kerala backwaters with a houseboat among coconut palms" }],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

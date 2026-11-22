@@ -277,7 +277,7 @@ export function NriConcierge() {
             Buy in Kerala <span className="text-[#e3b95c]">without flying home</span>
           </h2>
           <p className="mt-3 max-w-xl text-[15px] text-white/65">
-            One dedicated advisor from the first shortlist to after-sales, on your clock in the Gulf, the US or Europe.
+            One team from the first shortlist to after-sales, on your clock in the Gulf, the US or Europe.
           </p>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -290,14 +290,16 @@ export function NriConcierge() {
             ))}
           </div>
 
-          <a
-            href={`https://wa.me/${site.whatsapp}?text=${encodeURIComponent("Hi, I'm an NRI looking for property in Kerala.")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={clsx(buttonClass("whatsapp", "lg"), "mt-8")}
-          >
-            <MessageCircle className="h-5 w-5" /> Chat with an NRI expert on WhatsApp
-          </a>
+          {site.whatsapp && (
+            <a
+              href={`https://wa.me/${site.whatsapp}?text=${encodeURIComponent("Hi, I'm an NRI looking for property in Kerala.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={clsx(buttonClass("whatsapp", "lg"), "mt-8")}
+            >
+              <MessageCircle className="h-5 w-5" /> Chat with an NRI expert on WhatsApp
+            </a>
+          )}
         </div>
 
         <div className="space-y-4 self-end">

@@ -24,7 +24,14 @@ const DEMO = [
   { label: "Admin", email: "admin@example.com" },
 ];
 const DEMO_PASSWORD = "demo-pass-2026";
-const SHOW_DEMO = process.env.NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS !== "false";
+/**
+ * Demo buttons: always in development. In a production build only when
+ * NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS is "true" (no admin; the API never creates a
+ * demo admin in production) or "all" (local production test runs).
+ */
+const DEMO_MODE = process.env.NODE_ENV === "development" ? "all" : process.env.NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS;
+const SHOW_DEMO = DEMO_MODE === "true" || DEMO_MODE === "all";
+const DEMO_SHOWN = DEMO.filter((d) => DEMO_MODE === "all" || !d.email.startsWith("admin@"));
 
 export function AuthForm() {
   const params = useSearchParams();
@@ -178,7 +185,7 @@ export function AuthForm() {
             <KeyRound className="h-4 w-4 text-gold" /> Demo accounts: one click to try each role
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {DEMO.map((d) => (
+            {DEMO_SHOWN.map((d) => (
               <button key={d.email} disabled={busy} onClick={() => submit(undefined, d.email)} className={buttonClass("outline", "sm")}>
                 {d.label}
               </button>

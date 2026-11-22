@@ -1,0 +1,224 @@
+{
+  "mode": "llm",
+  "at": "2026-11-22T19:12:47.414Z",
+  "cases": 20,
+  "passed": 20,
+  "passRate": 1,
+  "modes": {
+    "rule": 15,
+    "llm": 5
+  },
+  "rows": [
+    {
+      "q": "50 lakh flat in kakkanad",
+      "mode": "rule",
+      "reply": "I found 4 verified flats in and around Kakkanad up to ₹50 L. My top pick is 2BHK Lake-View Flat, Chittethukara at ₹44.5 L (K-RERA registered, 11% under your budget).",
+      "cards": [
+        "L017",
+        "L002",
+        "L019"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "2bhk flat near infopark under 60L",
+      "mode": "rule",
+      "reply": "I found 4 verified 2BHK+ flats up to ₹60 L. My top pick is 2BHK Apartment near Infopark at ₹48.5 L (K-RERA registered, 19% under your budget).",
+      "cards": [
+        "L002",
+        "L017",
+        "L018"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "villa in edappally below 2 crore",
+      "mode": "rule",
+      "reply": "I couldn't find verified villas and houses in and around Edappally up to ₹2 Cr yet. Try a slightly higher budget or a nearby area, or leave your number and we'll call when one is listed.",
+      "cards": [],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "flat for rent in kakkanad 25k",
+      "mode": "rule",
+      "reply": "I found 1 verified flat for rent in and around Kakkanad up to ₹25,000/month. My top pick is 3BHK Flat, Thrikkakara at ₹26,000 (Slightly above budget, negotiable, 0.1 km to B & B Memorial Hospital).",
+      "cards": [
+        "L058"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "plots in trivandrum",
+      "mode": "rule",
+      "reply": "I found 1 verified plot in Trivandrum. My top pick is Corner Residential Plot, Kazhakkoottam at ₹97 L (0.2 km to CSI MIssion Hospital).",
+      "cards": [
+        "L040"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "kakkanad il 50 lakh flat venam",
+      "mode": "rule",
+      "reply": "I found 4 verified flats in and around Kakkanad up to ₹50 L. My top pick is 2BHK Lake-View Flat, Chittethukara at ₹44.5 L (K-RERA registered, 11% under your budget).",
+      "cards": [
+        "L017",
+        "L002",
+        "L019"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "luxury villa with pool in kochi",
+      "mode": "rule",
+      "reply": "I found 15 verified villas and houses in Kochi. My top pick is Signature Pool Villa at ₹4.8 Cr (K-RERA registered, 1.1 km to Kadavanthra metro).",
+      "cards": [
+        "L007",
+        "L015",
+        "L044"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "flat near metro in kochi under 80 lakh",
+      "mode": "rule",
+      "reply": "I found 5 verified flats in Kochi up to ₹80 L. My top pick is 2BHK Apartment near Infopark at ₹48.5 L (K-RERA registered, 39% under your budget).",
+      "cards": [
+        "L002",
+        "L023",
+        "L034"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "family home near good schools in kakkanad",
+      "mode": "rule",
+      "reply": "I found 2 verified villas and houses in and around Kakkanad. My top pick is Contemporary 4BHK Villa at ₹1.85 Cr (K-RERA registered).",
+      "cards": [
+        "L001",
+        "L031"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "villa in kochi, no flood areas please",
+      "mode": "rule",
+      "reply": "I found 12 verified villas and houses in Kochi. My top pick is Signature Pool Villa at ₹4.8 Cr (K-RERA registered, 1.1 km to Kadavanthra metro).",
+      "cards": [
+        "L007",
+        "L015",
+        "L044"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "only near metro",
+      "mode": "rule",
+      "reply": "I found 1 verified flat in and around Kakkanad up to ₹50 L. My top pick is 2BHK Apartment near Infopark at ₹48.5 L (K-RERA registered, 0.8 km to Infopark).",
+      "cards": [
+        "L002"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "avoid flood areas",
+      "mode": "rule",
+      "reply": "I found 12 verified villas and houses in Kochi. My top pick is Signature Pool Villa at ₹4.8 Cr (K-RERA registered, 1.1 km to Kadavanthra metro).",
+      "cards": [
+        "L007",
+        "L015",
+        "L044"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "compare kakkanad and edappally",
+      "mode": "rule",
+      "reply": "Kakkanad is cheaper per sq.ft and has grown faster this year. Edappally has better metro access (Edappally, 0.1 km). Figures are indicative.",
+      "cards": [],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "is kakkanad a good place to invest?",
+      "mode": "llm",
+      "reply": "Yes, Kakkanad is a strong investment choice in Kochi! It has a healthy yearly price growth of about 9.1 percent with an average price of around 5,900 rupees per sq.ft. Plus, it is close to Infopark and has good school counts nearby, making it popular for rentals and appreciation. Please note these are indicative demo prices. Would you like to see some properties there?",
+      "cards": [],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "what is a fair price for a 3bhk in vyttila?",
+      "mode": "llm",
+      "reply": "Prices vary by builder and exact location, but for 3BHK apartments in Vyttila, typical options usually range around one crore and above depending on amenities and age. Note that prices shown are indicative demo data. Would you like me to check any specific listings or help you search across Kochi?",
+      "cards": [
+        "L034",
+        "L041"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "which flat near technopark is cheapest?",
+      "mode": "llm",
+      "reply": "Near Technopark in Kazhakkoottam, the cheapest apartment currently listed is 2BHK Premium Apartment at ₹53.5 L. Please note these prices are indicative demo data. Would you like more details about it?",
+      "cards": [
+        "L051",
+        "L013",
+        "L021"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "how far is the nearest metro from the cheapest 2bhk in edappally?",
+      "mode": "llm",
+      "reply": "We do not currently have any 2BHK listings in Edappally in our database. However, we do have the Spacious 3BHK near Lulu in Edappally, which is located just 0.4 km from the Edappally metro station. Let me know if you would like to explore that or search in a nearby area.",
+      "cards": [
+        "L058",
+        "L011"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "I work at Infopark and have 70 lakh, what should I buy?",
+      "mode": "rule",
+      "reply": "I found 7 verified homes up to ₹70 L. My top pick is 2BHK Apartment near Infopark at ₹48.5 L (K-RERA registered, 31% under your budget).",
+      "cards": [
+        "L002",
+        "L017",
+        "L012"
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "my parents need a quiet house near a hospital in trivandrum",
+      "mode": "rule",
+      "reply": "I couldn't find verified villas and houses in Trivandrum yet. Try a slightly higher budget or a nearby area, or leave your number and we'll call when one is listed.",
+      "cards": [],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "q": "is there anything under 20 lakh in vyttila?",
+      "mode": "llm",
+      "reply": "I am sorry, but we currently have no properties under 20 lakh in Vyttila for sale. Note that our prices are indicative demo data. Would you like to check a higher budget or look at another nearby locality like Maradu or Thrippunithura?",
+      "cards": [],
+      "pass": true,
+      "problems": []
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
+import { config } from "../src/config.js";
 import { connectDb, disconnectDb } from "../src/db.js";
 import { DEMO_PASSWORD, seedIfEmpty } from "../src/scripts/seed-data.js";
 
@@ -204,5 +205,27 @@ describe("NRI concierge and consent", () => {
     expect((await nri.patch("/me").send({ timeZone: "Mars/Olympus" })).status).toBe(400);
     const ok = await nri.patch("/me").send({ timeZone: "Asia/Qatar", currency: "QAR" });
     expect(ok.body.user.preferences).toMatchObject({ timeZone: "Asia/Qatar", currency: "QAR" });
+  });
+});
+
+describe("production proxy", () => {
+  it("answers only calls from the web proxy and uses the visitor's IP for rate limits", async () => {
+    config.proxySecret = "test-proxy-secret";
+    try {
+      expect((await request(app).get("/health")).status).toBe(200);
+      expect((await request(app).get("/listings/L001")).status).toBe(403);
+      expect((await request(app).get("/listings/L001").set("x-kr-proxy", "wrong-secret-value")).status).toBe(403);
+      const ok = await request(app).get("/listings/L001").set("x-kr-proxy", "test-proxy-secret");
+      expect(ok.status).toBe(200);
+
+      // Login is limited to 30 tries per 15 min per visitor: one visitor hitting it must not block another.
+      const tryLogin = (ip: string) =>
+        request(app).post("/auth/login").set("x-kr-proxy", "test-proxy-secret").set("x-kr-client-ip", ip).send({ email: "nobody@example.com", password: "wrong-password" });
+      for (let i = 0; i < 30; i++) await tryLogin("203.0.113.7");
+      expect((await tryLogin("203.0.113.7")).status).toBe(429);
+      expect((await tryLogin("198.51.100.9")).status).toBe(401);
+    } finally {
+      config.proxySecret = "";
+    }
   });
 });

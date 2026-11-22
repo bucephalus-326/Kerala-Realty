@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "stage-*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    env:
+      # Keep the test database binary outside node_modules (npm ci deletes it) so the cache below works.
+      MONGOMS_DOWNLOAD_DIR: /home/runner/.cache/mongodb-binaries
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      # The tests start a throwaway MongoDB; keep its download between runs.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ hashFiles('api/package-lock.json') }}
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # Rules only: free and deterministic. The LLM versions are run by hand (see README).
+      - name: Query-understanding eval
+        run: npm run eval
+      - name: Grounding eval (no invented prices, distances or listings)
+        run: npm run eval:grounding
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build

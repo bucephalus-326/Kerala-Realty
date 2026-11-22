@@ -112,7 +112,7 @@ export function ListingView({ listing }: { listing: Listing }) {
       </nav>
 
       {/* Gallery */}
-      <div className="grid gap-3 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="relative aspect-[16/10] overflow-hidden rounded-3xl bg-muted">
           <Image
             src={l.images[photo]}
@@ -158,8 +158,9 @@ export function ListingView({ listing }: { listing: Listing }) {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-8">
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        {/* min-w-0: long one-line place names must truncate, not widen the page on phones */}
+        <div className="min-w-0 space-y-8">
           <header>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">
               For {isRent ? "rent" : "sale"} · {TYPE_LABEL[l.type]}
@@ -223,7 +224,7 @@ export function ListingView({ listing }: { listing: Listing }) {
                 Open on the map
               </Link>
             </div>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {nearby.map(([cat, n]) => {
                 const I = ICON[cat];
                 return (
@@ -255,7 +256,7 @@ export function ListingView({ listing }: { listing: Listing }) {
         </div>
 
         {/* Action column */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-3xl border border-line bg-surface-strong p-5 shadow-card">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -280,9 +281,11 @@ export function ListingView({ listing }: { listing: Listing }) {
               <button onClick={() => setBooking(true)} className={buttonClass("primary", "lg")}>
                 <CalendarPlus className="h-4 w-4" /> Book a visit or video tour
               </button>
-              <a href={`https://wa.me/${site.whatsapp}?text=${wa}`} target="_blank" rel="noopener noreferrer" className={buttonClass("whatsapp", "lg")}>
-                <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
-              </a>
+              {site.whatsapp && (
+                <a href={`https://wa.me/${site.whatsapp}?text=${wa}`} target="_blank" rel="noopener noreferrer" className={buttonClass("whatsapp", "lg")}>
+                  <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
+                </a>
+              )}
               <button onClick={() => setCallback((v) => !v)} className={buttonClass("outline", "md")} aria-expanded={callback}>
                 <Phone className="h-4 w-4" /> Request a call back
               </button>

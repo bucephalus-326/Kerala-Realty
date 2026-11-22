@@ -30,6 +30,14 @@ const SECTIONS = [
     ],
   },
   {
+    h: "The AI assistant",
+    p: [
+      "Messages you type to the assistant are sent to an AI provider (Google Gemini, or a free fallback provider when Gemini is busy) to understand your search. We send your message and, if you allowed it in the consent banner, your approximate city, device type and time zone; never your name, contact details or account.",
+      "On the free plans we use, the provider may keep messages and use them to improve its services. Please don't type personal details such as phone numbers or ID numbers into the chat; use the call-back form instead.",
+      "Answers about listings, prices and distances come from our own data, not from the AI model.",
+    ],
+  },
+  {
     h: "Storage and security",
     p: [
       "Passwords are hashed. Sessions use secure, http-only cookies. Consent records use a random identifier and no IP address.",

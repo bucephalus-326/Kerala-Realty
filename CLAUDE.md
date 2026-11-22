@@ -8,13 +8,14 @@ Built in stages on branches `stage-1-home` … `stage-N-*`; each stage branches 
 - `api/` Express 5 + MongoDB (Mongoose), TypeScript, ESM. In-memory MongoDB when `MONGODB_URI` is empty.
 - `scripts/` data pipeline: `fetch-osm.mjs` (OpenStreetMap via Overpass) → `build-data.mjs` → `web/src/data/generated/*.json`.
 - `data/` seeds and raw OSM extracts (see `data/README.md`).
-- `docs/screenshots/` one set per stage.
+- `docs/screenshots/` one set per stage. Deployment: `docs/DEPLOY.md`, `render.yaml`, `.github/workflows/`.
 
 ## Commands
 ```bash
 cd api && npm run dev        # API on :4000, seeds demo data
 cd api && npm test           # vitest against a temporary MongoDB
 cd api && npm run eval       # assistant query-understanding evals (add -- --llm for Gemini)
+cd api && npm run eval:grounding  # every fact in assistant answers matches the data (add -- --llm for Gemini)
 cd web && npm run dev        # site on :3000
 cd web && npm run build && npm run lint
 node scripts/build-data.mjs  # regenerate listings, places, price grid

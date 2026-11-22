@@ -26,7 +26,6 @@ nriRouter.get("/dashboard", async (req, res) => {
   if (missing.length) for (const l of await Listing.find({ _id: { $in: missing } }).lean()) byId.set(String(l._id), l);
   res.json({
     user: publicUser(user as UserDoc),
-    advisor: { name: "Anjali Menon", title: "NRI property advisor", languages: ["English", "Malayalam", "Hindi"], whatsapp: "919000000000" },
     shortlist: shortlist.map(toClient),
     visits: visits.map((v) => visitToClient(v, byId.get(v.listingId))),
     requests: requests.map((r) => ({ id: String(r._id), service: r.service, message: r.message, status: r.status, createdAt: r.createdAt })),

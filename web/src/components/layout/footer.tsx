@@ -12,9 +12,35 @@ const TRUST = [
 ];
 
 const COLS = [
-  { h: "Discover", l: ["Buy", "Rent", "New projects", "Plots", "Commercial", "Luxury"] },
-  { h: "Services", l: ["NRI concierge", "Legal assistance", "Video tours", "Price check"] },
-  { h: "Company", l: ["About", "Verification policy", "Report a listing", "Contact"] },
+  {
+    h: "Discover",
+    l: [
+      ["Buy", "/?purpose=buy"],
+      ["Rent", "/?purpose=rent"],
+      ["New projects", "/?segment=new"],
+      ["Plots", "/?type=plot"],
+      ["Commercial", "/?type=commercial"],
+      ["Luxury", "/?segment=luxury"],
+    ],
+  },
+  {
+    h: "Services",
+    l: [
+      ["NRI concierge", "/#nri"],
+      ["Legal assistance", "/about#legal"],
+      ["Video tours", "/about#video-tours"],
+      ["Price check", "/about#price-check"],
+    ],
+  },
+  {
+    h: "Company",
+    l: [
+      ["About", "/about"],
+      ["Verification policy", "/about#verification"],
+      ["Report a listing", "/about#report"],
+      ["Contact", "/about#contact"],
+    ],
+  },
 ];
 
 export function Footer() {
@@ -43,10 +69,10 @@ export function Footer() {
             <div key={c.h}>
               <p className="mb-3 text-sm font-semibold">{c.h}</p>
               <ul className="space-y-2">
-                {c.l.map((x) => (
-                  <li key={x}>
-                    <Link href="/" className="text-sm text-ink-3 transition hover:text-ink">
-                      {x}
+                {c.l.map(([label, href]) => (
+                  <li key={label}>
+                    <Link href={href} className="text-sm text-ink-3 transition hover:text-ink">
+                      {label}
                     </Link>
                   </li>
                 ))}
@@ -77,7 +103,7 @@ export function MobileTabBar() {
     { icon: Home, l: "Home", href: "/" },
     { icon: Search, l: "Search", href: "/#featured" },
     { icon: Map, l: "Map", href: "/map" },
-    { icon: Heart, l: "Saved", href: "/#featured" },
+    { icon: Heart, l: "Saved", href: "/account" },
     { icon: User, l: "Account", href: "/account" },
   ];
   return (

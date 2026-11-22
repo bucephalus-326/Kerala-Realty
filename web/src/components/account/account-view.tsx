@@ -140,7 +140,7 @@ function Panel({ title, icon: I, action, children, className }: { title: string;
 
 function BuyerDashboard() {
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
       <SavedHomes />
       <div className="space-y-6">
         <VisitsPanel />
@@ -282,7 +282,6 @@ function PreferencesPanel() {
 /* ───────────── NRI ───────────── */
 
 interface NriData {
-  advisor: { name: string; title: string; languages: string[]; whatsapp: string };
   visits: Visit[];
   requests: { id: string; service: string; message: string; status: string; createdAt: string }[];
 }
@@ -309,7 +308,7 @@ function NriDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-3">
-        <AdvisorCard advisor={data?.advisor} />
+        <AdvisorCard />
         <ClocksCard tz={tz} />
         <PreferencesPanel />
       </div>
@@ -367,20 +366,23 @@ function NriDashboard() {
   );
 }
 
-function AdvisorCard({ advisor }: { advisor?: NriData["advisor"] }) {
+/** The NRI desk: a team, not a named person (no advisor names until real staff are assigned). */
+function AdvisorCard() {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-[#e3b95c]/30 bg-[linear-gradient(135deg,rgba(227,185,92,0.16),transparent_60%)] p-5 md:p-6">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">Your NRI advisor</p>
-      <p className="mt-3 font-display text-xl font-semibold">{advisor?.name ?? "…"}</p>
-      <p className="text-sm text-ink-3">{advisor ? `${advisor.title} · ${advisor.languages.join(", ")}` : ""}</p>
-      <a
-        href={`https://wa.me/${advisor?.whatsapp ?? site.whatsapp}?text=${encodeURIComponent("Hi, I'm an NRI buyer and need help with my shortlist.")}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={clsx(buttonClass("whatsapp", "md"), "mt-5 w-full")}
-      >
-        <MessageCircle className="h-4 w-4" /> WhatsApp your advisor
-      </a>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">Your NRI desk</p>
+      <p className="mt-3 font-display text-xl font-semibold">{site.name} NRI concierge</p>
+      <p className="text-sm text-ink-3">Shortlists, legal checks and visits, {site.supportHours}. Send a request below and we&apos;ll reply in your time zone.</p>
+      {site.whatsapp && (
+        <a
+          href={`https://wa.me/${site.whatsapp}?text=${encodeURIComponent("Hi, I'm an NRI buyer and need help with my shortlist.")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={clsx(buttonClass("whatsapp", "md"), "mt-5 w-full")}
+        >
+          <MessageCircle className="h-4 w-4" /> WhatsApp the NRI desk
+        </a>
+      )}
     </section>
   );
 }
@@ -462,7 +464,7 @@ function ConciergePanel({ requests, onSent }: { requests: NriData["requests"] | 
         />
         {error && <p className="text-sm text-danger">{error}</p>}
         <button disabled={busy || message.trim().length < 5} className={clsx(buttonClass("primary", "md"), "w-full")}>
-          {busy && <Loader2 className="h-4 w-4 animate-spin" />} Send to my advisor
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />} Send to the NRI desk
         </button>
       </form>
       {requests && requests.length > 0 && (

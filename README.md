@@ -92,6 +92,21 @@ Set `GEMINI_API_KEY` on the API host to turn the AI on; without it the assistant
 
 ![Admin overview](docs/screenshots/26-admin-overview.jpg)
 
+## Stage 8: launch readiness (done)
+- **Deploy on free tiers:** Vercel (web), Render (API, [`render.yaml`](render.yaml)) and MongoDB Atlas M0. Step by step in [docs/DEPLOY.md](docs/DEPLOY.md).
+- **Trusted proxy:** the website's middleware adds a shared `PROXY_SECRET` and the visitor's IP to every `/api` call. The API refuses calls without it, and rate limits count visitors rather than Vercel's servers.
+- **Safe accounts in production:** the demo admin (public password) is never created in production; the first admin comes from `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Demo accounts are off unless switched on, because they would expose real visitors' enquiries.
+- **Cold starts:** listing pages wait at most 8 s for a sleeping API, then fall back to the demo data or a "try again" page. An optional GitHub Action keeps the API awake. `/health` reports database status, and the API shuts down cleanly on deploys.
+- **Grounding eval** (`npm run eval:grounding`): runs the real assistant and checks that every card, rupee amount, distance, growth figure and count it states matches the database or locality data. Rules: 20/20; with Gemini: 20/20.
+- **CI** on every push: typecheck, tests, both evals, lint and build.
+- **Web:** security headers with a Content Security Policy, sitemap, robots rules, share previews, schema.org data on listings, 404 and error pages, and an About page.
+  - Footer and navbar links now open real filtered results (`/?purpose=rent`, `/?type=plot`).
+  - WhatsApp buttons appear only once `NEXT_PUBLIC_WHATSAPP_NUMBER` is set.
+  - The privacy notice now says what the AI provider receives.
+- **Fixes:** listing pages were wider than phone screens (long place names), and the NRI page showed an invented advisor name; it now shows the NRI desk. 69 API tests.
+
+![About page](docs/screenshots/31-about.jpg)
+
 ## Run locally
 
 Two terminals:
@@ -109,10 +124,14 @@ Demo accounts (local only) are on the sign-in page: buyer, NRI, owner, agent and
 | Variable | Where | What |
 |---|---|---|
 | `API_URL` | web | API base URL for the `/api` proxy (default `http://localhost:4000`) |
-| `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS` | web | `false` hides the demo-account buttons |
+| `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS` | web | demo sign-in buttons in production builds: `true` (no admin) or empty (hidden); always shown in `npm run dev` |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | web | WhatsApp number, digits with country code; buttons hidden while empty |
+| `NEXT_PUBLIC_SITE_URL` | web | public address for the sitemap and share previews (Vercel's URL by default) |
+| `PROXY_SECRET` | web + api | same value on both; the API then only answers the website's proxy |
 | `MONGODB_URI` | api | MongoDB Atlas connection string (empty locally = in-memory) |
 | `JWT_SECRET` | api | long random string; required in production |
-| `SEED_DEMO_USERS` | api | `true` seeds demo accounts in production |
+| `SEED_DEMO_USERS` | api | `true` seeds the demo buyer, NRI, owner and agent in production (never the admin) |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | api | first admin account, created once on start (password 12+ characters) |
 | `GEMINI_API_KEY` | api | turns on the AI assistant (free tier works) |
 | `GROQ_API_KEY`, `OPENROUTER_API_KEY` | api | optional free fallbacks when Gemini is busy |
 | `AI_DAILY_LIMIT`, `AI_GLOBAL_DAILY_LIMIT` | api | default AI answers per visitor / per day (15 / 800); admins can change them in Settings |

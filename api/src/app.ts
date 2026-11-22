@@ -5,7 +5,9 @@ import helmet from "helmet";
 import { config } from "./config.js";
 import { readSession, requireJson } from "./auth/session.js";
 import { errorHandler, HttpError } from "./lib/http.js";
+import { trustedProxy } from "./lib/proxy.js";
 import { getSettings } from "./lib/settings.js";
+import mongoose from "mongoose";
 import { adminRouter } from "./routes/admin.js";
 import { aiAdminRouter, aiRouter, leadsRouter } from "./routes/ai.js";
 import { authRouter } from "./routes/auth.js";
@@ -24,12 +26,17 @@ export function createApp() {
   // The web app calls the API through its own /api proxy (same origin). CORS is
   // only for direct calls during development.
   app.use(cors({ origin: config.webOrigin, credentials: true }));
+  app.use(trustedProxy);
   app.use(express.json({ limit: "100kb" }));
   app.use(cookieParser());
   app.use(requireJson);
   app.use(readSession);
 
-  app.get("/health", (_req, res) => res.json({ ok: true }));
+  // Render's health check: unhealthy while the database is unreachable.
+  app.get("/health", (_req, res) => {
+    const db = mongoose.connection.readyState === 1;
+    res.status(db ? 200 : 503).json({ ok: db });
+  });
   app.get("/settings/public", async (_req, res) => {
     const s = await getSettings();
     res.setHeader("Cache-Control", "public, max-age=60");

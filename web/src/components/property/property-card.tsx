@@ -220,18 +220,20 @@ export function PropertyCard({
           </p>
         )}
 
-        <div className="relative z-10 mt-auto grid grid-cols-[auto_1fr] gap-2 pt-1">
+        <div className={clsx("relative z-10 mt-auto grid gap-2 pt-1", site.whatsapp && "grid-cols-[auto_1fr]")}>
           <button onClick={() => setBooking(true)} className={buttonClass("outline", "sm")} aria-label={`Book a visit to ${l.title}`}>
             <CalendarPlus className="h-4 w-4" /> Visit
           </button>
-          <a
-            href={`https://wa.me/${site.whatsapp}?text=${waText}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonClass("whatsapp", "sm")}
-          >
-            <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
-          </a>
+          {site.whatsapp && (
+            <a
+              href={`https://wa.me/${site.whatsapp}?text=${waText}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonClass("whatsapp", "sm")}
+            >
+              <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
+            </a>
+          )}
         </div>
       </div>
       {booking && <VisitDialog listing={l} onClose={() => setBooking(false)} />}

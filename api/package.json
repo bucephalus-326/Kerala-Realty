@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed": "tsx src/scripts/seed.ts",
     "test": "vitest run",
-    "eval": "tsx src/scripts/eval.ts"
+    "eval": "tsx src/scripts/eval.ts",
+    "eval:grounding": "tsx src/scripts/eval-grounding.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

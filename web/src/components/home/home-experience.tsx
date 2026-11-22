@@ -28,7 +28,8 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { LOCALITIES, TYPE_LABEL, type PropertyType } from "@/data/listings";
 import { useListings } from "../listings-provider";
 import { CURRENCIES, formatPrice, regionFromTimeZone } from "@/lib/currency";
@@ -95,6 +96,9 @@ export function HomeExperience() {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <UrlFilters onApply={(f) => applyRef.current(f)} />
+      </Suspense>
       <Hero draft={draft} setDraft={setDraft} onSearch={() => apply({ ...draft, ids: undefined })} onPrompt={applyPartial} />
       <CategoryRail applied={applied} onPick={applyPartial} />
       <div ref={resultsRef} className="scroll-mt-20">
@@ -110,6 +114,29 @@ export function HomeExperience() {
       </div>
     </>
   );
+}
+
+/**
+ * Links such as /?purpose=rent or /?type=plot (navbar, footer) open the matching results.
+ * Its own component so that reading the URL doesn't turn the whole page client-only.
+ */
+function UrlFilters({ onApply }: { onApply: (f: Filters) => void }) {
+  const urlKey = useSearchParams().toString();
+  const applyRef = useRef(onApply);
+  applyRef.current = onApply;
+  useEffect(() => {
+    const p = new URLSearchParams(urlKey);
+    const [purpose, type, segment, q] = ["purpose", "type", "segment", "q"].map((k) => p.get(k));
+    if (!purpose && !type && !segment && !q) return;
+    applyRef.current({
+      ...DEFAULT_FILTERS,
+      purpose: purpose === "rent" ? "rent" : "buy",
+      type: type && type in TYPE_LABEL ? (type as PropertyType) : "any",
+      segment: segment === "new" || segment === "luxury" ? segment : "all",
+      query: q?.slice(0, 80) ?? "",
+    });
+  }, [urlKey]);
+  return null;
 }
 
 /* ───────────────────────────── Hero ───────────────────────────── */
