@@ -19,6 +19,7 @@ import {
   Ship,
   ShoppingBag,
   Sparkles,
+  Star,
   TrainFront,
   TramFront,
   Waves,
@@ -106,6 +107,11 @@ export function PropertyCard({
               Verified owner
             </span>
           ) : null}
+          {l.featured && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[10.5px] font-bold uppercase tracking-wide text-[#0b1712]">
+              <Star className="h-3 w-3 fill-current" /> Featured
+            </span>
+          )}
           {l.isNewProject && (
             <span className="rounded-full bg-[#2dd4bf] px-2 py-1 text-[10.5px] font-bold uppercase tracking-wide text-[#032521]">
               New launch

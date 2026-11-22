@@ -5,6 +5,7 @@
 import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import { HttpError } from "./http.js";
+import { getSettings } from "./settings.js";
 
 type Bucket = "media" | "documents";
 const bucket = (name: Bucket) => new mongoose.mongo.GridFSBucket(mongoose.connection.db!, { bucketName: name });
@@ -55,8 +56,10 @@ export async function usageOf(ownerId: string) {
  * (Atlas M0 has 512 MB). Read per call so it can be tuned without a restart.
  */
 export async function assertQuota(ownerId: string, incoming: number) {
-  const maxFiles = Number(process.env.UPLOAD_MAX_FILES ?? 80);
-  const maxBytes = Number(process.env.UPLOAD_MAX_MB ?? 60) * 1024 * 1024;
+  const { uploads } = await getSettings();
+  // Env still wins when set explicitly (tests and emergency overrides).
+  const maxFiles = Number(process.env.UPLOAD_MAX_FILES ?? uploads.maxFiles);
+  const maxBytes = Number(process.env.UPLOAD_MAX_MB ?? uploads.maxMB) * 1024 * 1024;
   const u = await usageOf(ownerId);
   if (u.files + 1 > maxFiles || u.bytes + incoming > maxBytes) {
     throw new HttpError(413, `Storage limit reached (${maxFiles} files or ${maxBytes / 1024 / 1024} MB per account). Delete unused files or contact support.`, "quota_exceeded");

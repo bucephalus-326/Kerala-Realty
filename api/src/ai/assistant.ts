@@ -9,6 +9,7 @@
  */
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { getSettings } from "../lib/settings.js";
 import { AiCache, AiLog, AiUsage } from "../models/ai.js";
 import { Listing } from "../models/listing.js";
 import { toClient } from "../routes/listings.js";
@@ -82,11 +83,13 @@ export interface AssistantResponse {
 
 /* ───────────── Limits ───────────── */
 
-const DAILY_PER_VISITOR = Number(process.env.AI_DAILY_LIMIT ?? 15);
-const DAILY_GLOBAL = Number(process.env.AI_GLOBAL_DAILY_LIMIT ?? 800);
 const today = () => new Date().toISOString().slice(0, 10);
 
 async function takeAiQuota(visitorKey: string) {
+  const { ai } = await getSettings();
+  if (!ai.enabled) return false;
+  const DAILY_PER_VISITOR = ai.dailyPerVisitor;
+  const DAILY_GLOBAL = ai.globalDaily;
   const day = today();
   const [mine, global] = await Promise.all([
     AiUsage.findOne({ key: visitorKey, day }).lean(),

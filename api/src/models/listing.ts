@@ -43,6 +43,8 @@ const listingSchema = new Schema(
     /** False until the owner places the map pin (new drafts start with a placeholder point). */
     pinned: { type: Boolean, default: true },
     reviewNote: String,
+    /** Shown first on the home page; set by admins. */
+    featured: { type: Boolean, default: false, index: true },
     submittedAt: Date,
     publishedAt: Date,
     nearby: Schema.Types.Mixed,

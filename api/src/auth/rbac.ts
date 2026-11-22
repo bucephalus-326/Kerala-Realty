@@ -23,6 +23,10 @@ export const PERMISSIONS = {
   "projects:manage": ["agent"],
   "users:manage": [],
   "audit:read": [],
+  "listings:moderate": [],
+  "reports:manage": [],
+  "settings:manage": [],
+  "analytics:read": [],
 } as const satisfies Record<string, readonly Actor[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

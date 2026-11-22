@@ -71,10 +71,14 @@ authRouter.post("/login", limiter, async (req, res) => {
     await audit(req, "auth.login_failed", undefined, { email: body.email.toLowerCase() });
     throw new HttpError(401, "Email or password is incorrect", "bad_credentials");
   }
+  if (user.status === "suspended") {
+    await audit(req, "auth.login_suspended", String(user._id));
+    throw new HttpError(403, "This account is suspended. Contact support if you think this is a mistake.", "suspended");
+  }
   if (body.saved?.length) user.saved = [...new Set([...user.saved, ...body.saved])];
   user.lastLoginAt = new Date();
   await user.save();
-  startSession(res, { id: String(user._id), role: user.role });
+  startSession(res, { id: String(user._id), role: user.role, v: user.tokenVersion ?? 0 });
   req.user = { id: String(user._id), role: user.role };
   await audit(req, "auth.login", String(user._id));
   res.json({ user: publicUser(user as UserDoc), permissions: permissionsFor(user.role) });

@@ -37,6 +37,7 @@ import { TYPE_LABEL, type Listing, type PoiCategory } from "@/data/listings";
 import { api } from "@/lib/api";
 import { formatPrice } from "@/lib/currency";
 import { LeadForm } from "../leads/lead-form";
+import { ReportListing } from "./report-listing";
 import { isUpload } from "../listings-provider";
 import { usePrefs } from "../providers";
 import { buttonClass, ReraBadge } from "../ui/primitives";
@@ -304,6 +305,9 @@ export function ListingView({ listing }: { listing: Listing }) {
               K-RERA: {l.rera.status === "registered" ? <span className="font-mono text-xs text-ink">{l.rera.number}</span> : l.rera.status === "not_required" ? "not required for this property" : "registration pending"}
             </p>
             <p className="mt-1 text-xs text-ink-3">Listing {l.id}</p>
+            <div className="mt-3 border-t border-line pt-3">
+              <ReportListing listingId={l.id} />
+            </div>
           </div>
         </aside>
       </div>

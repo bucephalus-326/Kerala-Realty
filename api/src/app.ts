@@ -5,6 +5,7 @@ import helmet from "helmet";
 import { config } from "./config.js";
 import { readSession, requireJson } from "./auth/session.js";
 import { errorHandler, HttpError } from "./lib/http.js";
+import { getSettings } from "./lib/settings.js";
 import { adminRouter } from "./routes/admin.js";
 import { aiAdminRouter, aiRouter, leadsRouter } from "./routes/ai.js";
 import { authRouter } from "./routes/auth.js";
@@ -29,6 +30,11 @@ export function createApp() {
   app.use(readSession);
 
   app.get("/health", (_req, res) => res.json({ ok: true }));
+  app.get("/settings/public", async (_req, res) => {
+    const s = await getSettings();
+    res.setHeader("Cache-Control", "public, max-age=60");
+    res.json({ announcement: s.announcement.active && s.announcement.text ? s.announcement.text : null });
+  });
   app.use("/auth", authRouter);
   app.use("/listings", listingsRouter);
   app.use("/me", meRouter);

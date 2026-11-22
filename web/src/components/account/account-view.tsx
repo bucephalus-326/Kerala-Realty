@@ -15,7 +15,6 @@ import {
   Send,
   Sparkles,
   ShieldCheck,
-  Users,
   Video,
 } from "lucide-react";
 import Image from "next/image";
@@ -515,7 +514,7 @@ interface Lead {
   createdAt: string;
 }
 
-function LeadsPanel({ path }: { path: string }) {
+export function LeadsPanel({ path }: { path: string }) {
   const [items, setItems] = useState<Lead[] | null>(null);
   useEffect(() => {
     api<{ items: Lead[] }>(path).then((r) => setItems(r.items)).catch(() => setItems([]));
@@ -558,7 +557,7 @@ interface AiStats {
 
 const MODE_LABEL: Record<string, string> = { rule: "Rules (free)", llm: "AI (Gemini)", cache: "Cache", fallback: "Fallback" };
 
-function AssistantStats() {
+export function AssistantStats() {
   const [d, setD] = useState<AiStats | null>(null);
   useEffect(() => {
     api<AiStats>("/admin/ai-stats").then(setD).catch(() => {});
@@ -617,46 +616,16 @@ function AssistantStats() {
 /* ───────────── Admin ───────────── */
 
 function AdminDashboard() {
-  const [users, setUsers] = useState<User[] | null>(null);
-  const [audit, setAudit] = useState<{ _id: string; action: string; actorRole: string; target?: string; createdAt: string }[] | null>(null);
-  useEffect(() => {
-    api<{ items: User[] }>("/admin/users").then((r) => setUsers(r.items)).catch(() => setUsers([]));
-    api<{ items: typeof audit }>("/admin/audit").then((r) => setAudit(r.items)).catch(() => setAudit([]));
-  }, []);
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Panel title="Users" icon={Users} action={<span className="text-sm text-ink-3">{users?.length ?? ""}</span>}>
-        <ul className="divide-y divide-line">
-          {(users ?? []).map((u) => (
-            <li key={u.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-              <span className="min-w-0">
-                <span className="block truncate font-medium">{u.name}</span>
-                <span className="block truncate text-xs text-ink-3">{u.email}</span>
-              </span>
-              <span className="flex shrink-0 items-center gap-2 text-xs">
-                <VerificationBadge v={u.verification} />
-                <span className="rounded-full bg-muted px-2 py-0.5 text-ink-2">{ROLE_LABEL[u.role]}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Panel>
-      <Panel title="Audit trail" icon={ShieldCheck}>
-        <ul className="max-h-[480px] divide-y divide-line overflow-y-auto">
-          {(audit ?? []).map((a) => (
-            <li key={a._id} className="flex items-center justify-between gap-3 py-2 text-[13px]">
-              <span className="font-mono text-xs text-ink">{a.action}</span>
-              <span className="text-xs text-ink-3">
-                {a.actorRole} · {new Date(a.createdAt).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Panel>
-      <AssistantStats />
-      <LeadsPanel path="/admin/leads" />
-      <p className="text-xs text-ink-3 lg:col-span-2">Approvals, verification and moderation arrive with the full admin console.</p>
-    </div>
+    <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-brand/30 bg-brand-soft p-6">
+      <div>
+        <p className="font-display text-xl font-semibold">Admin console</p>
+        <p className="mt-1 text-sm text-ink-2">Review listings, verify owners and agents, handle reports, manage users and settings.</p>
+      </div>
+      <Link href="/admin" className={buttonClass("primary", "md")}>
+        Open the console
+      </Link>
+    </section>
   );
 }
 

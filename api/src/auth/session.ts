@@ -2,11 +2,14 @@ import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../config.js";
 import { HttpError } from "../lib/http.js";
+import { User } from "../models/user.js";
 import type { Role } from "./rbac.js";
 
 export interface SessionUser {
   id: string;
   role: Role;
+  /** Token version; must match the user's current one. */
+  v?: number;
 }
 
 declare module "express-serve-static-core" {
@@ -23,7 +26,7 @@ const cookieOptions = () => ({
 });
 
 export function startSession(res: Response, user: SessionUser) {
-  const token = jwt.sign({ sub: user.id, role: user.role }, config.jwtSecret, {
+  const token = jwt.sign({ sub: user.id, role: user.role, v: user.v ?? 0 }, config.jwtSecret, {
     algorithm: "HS256",
     expiresIn: `${config.sessionDays}d`,
   });
@@ -34,17 +37,50 @@ export function endSession(res: Response) {
   res.clearCookie(config.sessionCookie, cookieOptions());
 }
 
-/** Reads the session cookie if present. Invalid or expired tokens are treated as signed out. */
-export function readSession(req: Request, _res: Response, next: NextFunction) {
-  const token = req.cookies?.[config.sessionCookie];
-  if (token) {
-    try {
-      const p = jwt.verify(token, config.jwtSecret, { algorithms: ["HS256"] }) as jwt.JwtPayload;
-      if (p.sub && p.role) req.user = { id: String(p.sub), role: p.role as Role };
-    } catch {
-      /* ignore: signed out */
-    }
+/**
+ * Current role and status per user, re-read from the database at most every
+ * 30 s. Tokens carry a role, but an admin's role change or suspension must win.
+ * shortcut: per-process cache, so with several API processes a change can take
+ * up to 30 s to reach all of them; bumping tokenVersion makes it final.
+ */
+const live = new Map<string, { role: Role; status: string; v: number; at: number }>();
+const LIVE_TTL = 30_000;
+
+export function forgetSession(userId: string) {
+  live.delete(userId);
+}
+
+async function liveUser(id: string) {
+  const hit = live.get(id);
+  if (hit && Date.now() - hit.at < LIVE_TTL) return hit;
+  const u = await User.findById(id, { role: 1, status: 1, tokenVersion: 1 }).lean();
+  if (!u) {
+    live.delete(id);
+    return null;
   }
+  const row = { role: u.role as Role, status: u.status ?? "active", v: u.tokenVersion ?? 0, at: Date.now() };
+  live.set(id, row);
+  if (live.size > 10_000) live.delete(live.keys().next().value!); // bounded
+  return row;
+}
+
+/** Reads the session cookie. Invalid, expired, revoked or suspended sessions are treated as signed out. */
+export async function readSession(req: Request, res: Response, next: NextFunction) {
+  const token = req.cookies?.[config.sessionCookie];
+  if (!token) return next();
+  let p: jwt.JwtPayload;
+  try {
+    p = jwt.verify(token, config.jwtSecret, { algorithms: ["HS256"] }) as jwt.JwtPayload;
+  } catch {
+    return next();
+  }
+  if (!p.sub || !p.role) return next();
+  const u = await liveUser(String(p.sub)).catch(() => null);
+  if (!u || u.status !== "active" || u.v !== (p.v ?? 0)) {
+    res.clearCookie(config.sessionCookie, cookieOptions());
+    return next();
+  }
+  req.user = { id: String(p.sub), role: u.role, v: u.v };
   next();
 }
 

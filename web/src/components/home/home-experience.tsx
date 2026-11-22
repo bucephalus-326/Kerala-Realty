@@ -467,7 +467,10 @@ function Results({
   const budgetLabel = BUDGETS[filters.purpose].find((b) => b.value === filters.budgetMax)?.label;
 
   if (!active) {
-    const featured = rankListings(listings.filter((l) => l.purpose === filters.purpose), filters).slice(0, 8);
+    // Admin-featured homes first, then the best-ranked.
+    const featured = rankListings(listings.filter((l) => l.purpose === filters.purpose), filters)
+      .sort((a, b) => Number(!!b.listing.featured) - Number(!!a.listing.featured))
+      .slice(0, 8);
     return (
       <section id="featured" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-14 md:px-6">
         <SectionHeading

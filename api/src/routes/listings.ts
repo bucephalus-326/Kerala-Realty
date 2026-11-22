@@ -4,6 +4,8 @@ import { z } from "zod";
 import { requirePermission } from "../auth/rbac.js";
 import { notFound, parse } from "../lib/http.js";
 import { Listing, ListingView } from "../models/listing.js";
+import { REPORT_REASONS, Report } from "../models/admin.js";
+import { audit } from "../lib/audit.js";
 
 export const listingsRouter = Router();
 
@@ -59,6 +61,26 @@ listingsRouter.get("/:id", requirePermission("listings:read"), async (req, res) 
   const l = await Listing.findOne({ _id: String(req.params.id), status: "published" }).lean();
   if (!l) throw notFound("Listing");
   res.json(publicView(l));
+});
+
+/* ───────────── Reports from visitors ───────────── */
+
+const reportLimiter = rateLimit({ windowMs: 60 * 60_000, limit: 10, standardHeaders: "draft-7", legacyHeaders: false });
+const reportSchema = z.object({ reason: z.enum(REPORT_REASONS), details: z.string().trim().max(1000).optional() });
+
+listingsRouter.post("/:id/report", reportLimiter, async (req, res) => {
+  const id = String(req.params.id);
+  const body = parse(reportSchema, req.body);
+  if (!(await Listing.exists({ _id: id, status: "published" }))) throw notFound("Listing");
+  const reporterKey = req.user ? `u:${req.user.id}` : `a:${String(req.cookies?.kr_anon ?? req.ip)}`;
+  try {
+    await Report.create({ listingId: id, ...body, reporterId: req.user?.id, reporterKey });
+  } catch (e) {
+    if ((e as { code?: number }).code === 11000) return res.status(200).json({ ok: true, duplicate: true }); // already reported by this visitor
+    throw e;
+  }
+  await audit(req, "report.create", id, { reason: body.reason });
+  res.status(201).json({ ok: true });
 });
 
 /** Public shape: hides vault document ids and moderation notes. */

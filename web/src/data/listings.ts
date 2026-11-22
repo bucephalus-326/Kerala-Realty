@@ -48,6 +48,8 @@ export interface Listing {
   verified: boolean;
   isNewProject?: boolean;
   isLuxury?: boolean;
+  /** Picked by admins; shown first on the home page. */
+  featured?: boolean;
   images: string[];
   amenities: string[];
   postedBy: { kind: "owner" | "agent" | "builder"; name: string };

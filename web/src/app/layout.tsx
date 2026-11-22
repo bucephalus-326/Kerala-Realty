@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import "./globals.css";
 import { Assistant } from "@/components/assistant/assistant";
+import { Announcement } from "@/components/layout/announcement";
 import { ConsentBanner } from "@/components/consent/consent-banner";
 import { Providers } from "@/components/providers";
 import { site } from "@/config/site";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-dvh bg-bg text-ink">
         <Providers>
           {children}
+          <Announcement />
           <Assistant />
           <ConsentBanner />
         </Providers>

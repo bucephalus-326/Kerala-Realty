@@ -17,6 +17,11 @@ const userSchema = new Schema(
       country: { type: String },
     },
     saved: { type: [String], default: [] },
+    /** Suspended accounts can't sign in, and their existing sessions stop working. */
+    status: { type: String, enum: ["active", "suspended"], default: "active" },
+    suspendedReason: String,
+    /** Bumped on role change or suspension to invalidate existing session tokens. */
+    tokenVersion: { type: Number, default: 0 },
     lastLoginAt: Date,
   },
   { timestamps: true },
@@ -37,5 +42,6 @@ export function publicUser(u: UserDoc) {
     company: u.company ?? null,
     preferences: u.preferences,
     saved: u.saved,
+    status: u.status ?? "active",
   };
 }
