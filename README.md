@@ -70,9 +70,27 @@ Set `GEMINI_API_KEY` on the API host to turn the AI on; without it the assistant
 ## Stage 6: owner and agent portal (done)
 - `/portal`: listings with views, saves, visits and leads; visit requests (confirm, decline, mark done; buyer contact shared only after confirming); enquiries; document vault and profile verification uploads.
 - Six-step listing editor: basics, location (map pin; nearby places and flood risk computed on save), details (price, area, amenities, K-RERA with format check, new-project fields for agents), photos (resized in the browser to WebP, reorder, cover) and video link, private documents (SHA-256 fingerprint, every view audited), review.
-- Lifecycle: draft → in review → live → sold / rented / paused. Price, description, video and amenity edits stay live; photo, location and type changes go back to review. Admin approve/reject endpoint (UI comes with the admin console).
+- Lifecycle: draft → in review → live → sold / rented / paused. Price, description, video and amenity edits stay live; photo, location and type changes go back to review. Admins approve or send back from the admin console (stage 7).
 - Public listing page `/listings/[id]` (server-rendered from the API) and the whole site now reads live listings from the API, so new homes appear in search, the map and the assistant.
 - Files are stored in MongoDB GridFS (no extra service), with a per-account cap (`UPLOAD_MAX_FILES`, default 80; `UPLOAD_MAX_MB`, default 60) so the free 512 MB database can't be filled by one account. 53 API tests.
+
+## Stage 7: admin console (done)
+- `/admin` (admin role only; every route checks an admin permission on the server):
+  - **Overview:** headline numbers, then daily views, visits, leads and sign-ups (7, 30 or 90 days), most-viewed listings, and listings by status and city.
+  - **Listing review:** approve, or send back with a note the owner sees.
+  - **Verification:** owner and agent ID documents, opened through the audited vault. Verifying an owner gives all their listings the verified badge.
+  - **Reports:** visitors flag fake, sold or wrong listings (one open report per visitor); the admin dismisses or takes down, which closes every report on that listing.
+  - **Listings:** search, feature (featured homes come first on the home page) or take down with a reason.
+  - **Users:** search and filter, change role, suspend or reactivate, set verification.
+  - **Leads**, **Activity log** (filter by action and role) and **Settings**.
+- Role changes and suspensions apply at once: sessions are re-checked against the database (cached 30 s per process), and a change signs the person out. Suspended accounts can't sign in.
+- Settings are stored in the database and apply within 30 seconds without a redeploy:
+  - a site-wide announcement;
+  - AI on/off and daily limits;
+  - per-account upload caps.
+  The env variables below are now only the defaults. 64 API tests.
+
+![Admin overview](docs/screenshots/26-admin-overview.jpg)
 
 ## Run locally
 
@@ -97,8 +115,8 @@ Demo accounts (local only) are on the sign-in page: buyer, NRI, owner, agent and
 | `SEED_DEMO_USERS` | api | `true` seeds demo accounts in production |
 | `GEMINI_API_KEY` | api | turns on the AI assistant (free tier works) |
 | `GROQ_API_KEY`, `OPENROUTER_API_KEY` | api | optional free fallbacks when Gemini is busy |
-| `AI_DAILY_LIMIT`, `AI_GLOBAL_DAILY_LIMIT` | api | AI answers per visitor / per day (default 15 / 800) |
-| `UPLOAD_MAX_FILES`, `UPLOAD_MAX_MB` | api | per-account storage cap (default 80 files / 60 MB) |
+| `AI_DAILY_LIMIT`, `AI_GLOBAL_DAILY_LIMIT` | api | default AI answers per visitor / per day (15 / 800); admins can change them in Settings |
+| `UPLOAD_MAX_FILES`, `UPLOAD_MAX_MB` | api | default per-account storage cap (80 files / 60 MB); admins can change it in Settings |
 
 Listings and places are generated data (see [`data/README.md`](data/README.md)). Photos come from Unsplash (free licence) and are stored in `web/public/img`.
 
@@ -107,5 +125,6 @@ Listings and places are generated data (see [`data/README.md`](data/README.md)).
 | Search flow | Mobile |
 |---|---|
 | ![Search flow](docs/screenshots/2-desktop-search-flow.jpg) | ![Mobile](docs/screenshots/5-mobile-hero.jpg) |
+| ![Admin listings](docs/screenshots/28-admin-listings.jpg) | ![Admin on a phone](docs/screenshots/30-admin-mobile.jpg) |
 
 More in `docs/screenshots/`.

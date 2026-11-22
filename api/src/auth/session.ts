@@ -75,7 +75,12 @@ export async function readSession(req: Request, res: Response, next: NextFunctio
     return next();
   }
   if (!p.sub || !p.role) return next();
-  const u = await liveUser(String(p.sub)).catch(() => null);
+  let u: Awaited<ReturnType<typeof liveUser>>;
+  try {
+    u = await liveUser(String(p.sub));
+  } catch {
+    return next(); // database blip: signed out for this request only, keep the cookie
+  }
   if (!u || u.status !== "active" || u.v !== (p.v ?? 0)) {
     res.clearCookie(config.sessionCookie, cookieOptions());
     return next();

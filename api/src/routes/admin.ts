@@ -177,6 +177,7 @@ adminRouter.post("/listings/:id/takedown", requirePermission("listings:moderate"
   l.reviewNote = reason;
   l.featured = false;
   await l.save();
+  await Report.updateMany({ listingId: l.id, status: "open" }, { $set: { status: "actioned", resolution: reason, resolvedBy: req.user!.id } });
   await audit(req, "listing.takedown", l.id, { reason });
   res.json(toClient(l.toObject()));
 });

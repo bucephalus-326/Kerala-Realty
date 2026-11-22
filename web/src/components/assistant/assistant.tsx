@@ -14,7 +14,7 @@ import { usePrefs } from "../providers";
 import { buttonClass } from "../ui/primitives";
 import { type AssistantReply, type CardListing, type CompareRow, useAssistant } from "./use-assistant";
 
-const HIDDEN_ON = ["/map", "/signin", "/portal"];
+const HIDDEN_ON = ["/map", "/signin", "/portal", "/admin"];
 const NUDGE_KEY = "assistant.nudged";
 
 export function Assistant() {

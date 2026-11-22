@@ -10,7 +10,7 @@ export default function AdminPage() {
   return (
     <>
       <Navbar solid active="" />
-      <main className="min-h-dvh pb-24 pt-24 md:pt-28">
+      <main className="min-h-dvh pb-24 pt-28">
         <Suspense>
           <AdminConsole />
         </Suspense>

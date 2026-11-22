@@ -150,7 +150,8 @@ describe("review fixes", () => {
   });
 
   it("caps storage per account and rejects oversized photos", async () => {
-    process.env.UPLOAD_MAX_FILES = "1";
+    // The admin's upload limit applies at once.
+    await admin.put("/admin/settings").send({ uploads: { maxFiles: 1 } }).expect(200);
     try {
       const fresh = await signIn("agent@example.com");
       expect((await upload(fresh, "/media", PNG, "image/png")).status).toBe(201);
@@ -158,7 +159,7 @@ describe("review fixes", () => {
       expect(over.status).toBe(413);
       expect(over.body.error.code).toBe("quota_exceeded");
     } finally {
-      delete process.env.UPLOAD_MAX_FILES;
+      await admin.put("/admin/settings").send({ uploads: { maxFiles: 80 } }).expect(200);
     }
     const big = Buffer.concat([PNG, Buffer.alloc(4 * 1024 * 1024)]);
     const tooBig = await upload(owner, "/media", big, "image/png");

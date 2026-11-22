@@ -17,6 +17,7 @@ export function DailyBars({ title, data, unit }: { title: string; data: { day: s
   const last7 = data.slice(-7).reduce((a, d) => a + d.n, 0);
   const prev7 = data.slice(-14, -7).reduce((a, d) => a + d.n, 0);
   const shown = hover ?? data.length - 1;
+  const per = (n: number) => `${n} ${n === 1 ? unit.replace(/s$/, "") : unit}`;
   const fmt = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
   return (
     <figure className="rounded-2xl border border-line bg-surface-strong p-4">
@@ -31,7 +32,7 @@ export function DailyBars({ title, data, unit }: { title: string; data: { day: s
         <div
           className="flex h-20 items-end gap-[2px]"
           role="img"
-          aria-label={`${title}: ${total} ${unit} over ${data.length} days, peak ${max} on one day`}
+          aria-label={`${title}: ${per(total)} over ${data.length} days, peak ${max} on one day`}
           onMouseLeave={() => setHover(null)}
         >
           {data.map((d, i) => (
@@ -40,7 +41,7 @@ export function DailyBars({ title, data, unit }: { title: string; data: { day: s
               type="button"
               onMouseEnter={() => setHover(i)}
               onFocus={() => setHover(i)}
-              aria-label={`${fmt(d.day)}: ${d.n} ${unit}`}
+              aria-label={`${fmt(d.day)}: ${per(d.n)}`}
               className="group relative flex h-full flex-1 items-end"
             >
               <span
@@ -53,7 +54,7 @@ export function DailyBars({ title, data, unit }: { title: string; data: { day: s
         <div className="mt-1.5 flex justify-between text-[10.5px] text-ink-3">
           <span>{fmt(data[0].day)}</span>
           <span className="font-medium text-ink-2">
-            {fmt(data[shown].day)}: {data[shown].n} {unit}
+            {fmt(data[shown].day)}: {per(data[shown].n)}
           </span>
           <span>{fmt(data.at(-1)!.day)}</span>
         </div>

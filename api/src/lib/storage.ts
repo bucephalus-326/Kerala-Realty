@@ -56,10 +56,9 @@ export async function usageOf(ownerId: string) {
  * (Atlas M0 has 512 MB). Read per call so it can be tuned without a restart.
  */
 export async function assertQuota(ownerId: string, incoming: number) {
-  const { uploads } = await getSettings();
-  // Env still wins when set explicitly (tests and emergency overrides).
-  const maxFiles = Number(process.env.UPLOAD_MAX_FILES ?? uploads.maxFiles);
-  const maxBytes = Number(process.env.UPLOAD_MAX_MB ?? uploads.maxMB) * 1024 * 1024;
+  const { uploads } = await getSettings(); // admin value, else UPLOAD_MAX_* env, else default
+  const maxFiles = uploads.maxFiles;
+  const maxBytes = uploads.maxMB * 1024 * 1024;
   const u = await usageOf(ownerId);
   if (u.files + 1 > maxFiles || u.bytes + incoming > maxBytes) {
     throw new HttpError(413, `Storage limit reached (${maxFiles} files or ${maxBytes / 1024 / 1024} MB per account). Delete unused files or contact support.`, "quota_exceeded");

@@ -16,7 +16,7 @@ const reportSchema = new Schema(
   { timestamps: true },
 );
 // One open report per visitor per listing.
-reportSchema.index({ listingId: 1, reporterKey: 1 }, { unique: true });
+reportSchema.index({ listingId: 1, reporterKey: 1 }, { unique: true, partialFilterExpression: { status: "open" } });
 export const Report = model("Report", reportSchema);
 
 /** Platform settings: a single document, editable by admins. */

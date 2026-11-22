@@ -104,11 +104,14 @@ describe("listings moderation", () => {
     const pub = await request(app).get(`/listings/${d.body.id}`);
     expect(pub.body.featured).toBe(true);
 
+    await request(app).post(`/listings/${d.body.id}/report`).send({ reason: "fake" }).expect(201);
     expect((await admin.post(`/admin/listings/${d.body.id}/takedown`).send({ reason: "Photos belong to another property" })).body.status).toBe("rejected");
     expect((await request(app).get(`/listings/${d.body.id}`)).status).toBe(404);
     const mine = await owner.get(`/portal/listings/${d.body.id}`);
     expect(mine.body.reviewNote).toMatch(/another property/);
     expect(mine.body.featured).toBe(false);
+    // The takedown also closes the reports on that listing.
+    expect((await admin.get("/admin/reports")).body.items.some((r: { listingId: string }) => r.listingId === d.body.id)).toBe(false);
   });
 });
 
@@ -130,6 +133,12 @@ describe("reports", () => {
     await admin.post(`/admin/reports/${mine[0].id}`).send({ action: "takedown", note: "Confirmed sold" });
     expect((await request(app).get("/listings/L002")).status).toBe(404);
     expect((await admin.get("/admin/reports")).body.items.filter((r: { listingId: string }) => r.listingId === "L002").length).toBe(0);
+
+    // After a dismissal the same visitor can report again.
+    await visitor.post("/listings/L003/report").send({ reason: "wrong_price" }).expect(201);
+    const l3 = (await admin.get("/admin/reports")).body.items.find((r: { listingId: string }) => r.listingId === "L003");
+    await admin.post(`/admin/reports/${l3.id}`).send({ action: "dismiss", note: "Price checked with owner" }).expect(200);
+    await visitor.post("/listings/L003/report").send({ reason: "already_sold" }).expect(201);
   });
 });
 

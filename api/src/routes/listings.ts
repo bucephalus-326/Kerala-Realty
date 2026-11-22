@@ -68,7 +68,7 @@ listingsRouter.get("/:id", requirePermission("listings:read"), async (req, res) 
 const reportLimiter = rateLimit({ windowMs: 60 * 60_000, limit: 10, standardHeaders: "draft-7", legacyHeaders: false });
 const reportSchema = z.object({ reason: z.enum(REPORT_REASONS), details: z.string().trim().max(1000).optional() });
 
-listingsRouter.post("/:id/report", reportLimiter, async (req, res) => {
+listingsRouter.post("/:id/report", requirePermission("listings:read"), reportLimiter, async (req, res) => {
   const id = String(req.params.id);
   const body = parse(reportSchema, req.body);
   if (!(await Listing.exists({ _id: id, status: "published" }))) throw notFound("Listing");

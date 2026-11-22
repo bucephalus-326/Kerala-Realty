@@ -146,6 +146,39 @@ function Empty({ text }: { text: string }) {
 }
 
 /** Inline "reason / note" prompt used for reject, takedown and report decisions. */
+/** One-click action: disabled while running, shows the error if the call fails. */
+function ActionButton({ onAction, children, ...rest }: Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> & { onAction: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <>
+      <button
+        {...rest}
+        disabled={busy || rest.disabled}
+        aria-busy={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            await onAction();
+          } catch (e) {
+            setError((e as ApiError).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {children}
+      </button>
+      {error && (
+        <span role="alert" className="text-xs text-danger">
+          {error}
+        </span>
+      )}
+    </>
+  );
+}
+
 function NoteAction({ label, placeholder, danger, required = true, onSubmit }: { label: string; placeholder: string; danger?: boolean; required?: boolean; onSubmit: (note: string) => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
@@ -345,15 +378,15 @@ function ReviewQueue() {
                   <p className="text-xs text-gold">The owner isn&apos;t verified yet. Approving publishes it without the verified badge.</p>
                 )}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <button
-                    onClick={async () => {
+                  <ActionButton
+                    onAction={async () => {
                       await api(`/admin/listings/${l.id}/review`, { method: "POST", body: { decision: "approve" } });
                       reload();
                     }}
                     className={buttonClass("primary", "sm")}
                   >
                     <Check className="h-4 w-4" /> Approve
-                  </button>
+                  </ActionButton>
                   <NoteAction
                     label="Send back"
                     placeholder="What should the owner change? e.g. photos are blurry"
@@ -403,12 +436,12 @@ function Verification() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setUser(user.id, "verified")} disabled={!documents.length} className={buttonClass("primary", "sm")} title={documents.length ? undefined : "No documents uploaded yet"}>
+                <ActionButton onAction={() => setUser(user.id, "verified")} disabled={!documents.length} className={buttonClass("primary", "sm")} title={documents.length ? undefined : "No documents uploaded yet"}>
                   <BadgeCheck className="h-4 w-4" /> Verify
-                </button>
-                <button onClick={() => setUser(user.id, "rejected")} className={clsx(buttonClass("ghost", "sm"), "text-danger hover:text-danger")}>
+                </ActionButton>
+                <ActionButton onAction={() => setUser(user.id, "rejected")} className={clsx(buttonClass("ghost", "sm"), "text-danger hover:text-danger")}>
                   Reject
-                </button>
+                </ActionButton>
               </div>
             </div>
             {documents.length === 0 ? (
@@ -429,12 +462,12 @@ function Verification() {
                       </a>
                       {d.review === "pending" ? (
                         <>
-                          <button onClick={() => reviewDoc(d.id, "verified")} className={buttonClass("outline", "sm")}>
+                          <ActionButton onAction={() => reviewDoc(d.id, "verified")} className={buttonClass("outline", "sm")}>
                             Looks genuine
-                          </button>
-                          <button onClick={() => reviewDoc(d.id, "rejected")} className={clsx(buttonClass("ghost", "sm"), "text-danger")}>
+                          </ActionButton>
+                          <ActionButton onAction={() => reviewDoc(d.id, "rejected")} className={clsx(buttonClass("ghost", "sm"), "text-danger")}>
                             Reject
-                          </button>
+                          </ActionButton>
                         </>
                       ) : (
                         <span className={clsx("rounded-full px-2 py-0.5 text-xs", d.review === "verified" ? "bg-brand-soft text-brand" : "bg-danger/10 text-danger")}>{d.review}</span>
@@ -590,8 +623,8 @@ function LiveListings() {
                   {l.id} · {formatPrice(l.price, currency)} · {l.locality} · {l.owner?.name}
                 </span>
               </span>
-              <button
-                onClick={async () => {
+              <ActionButton
+                onAction={async () => {
                   await api(`/admin/listings/${l.id}/feature`, { method: "POST", body: { featured: !l.featured } });
                   reload();
                 }}
@@ -599,7 +632,7 @@ function LiveListings() {
                 className={clsx(buttonClass(l.featured ? "gold" : "outline", "sm"))}
               >
                 <Star className={clsx("h-4 w-4", l.featured && "fill-current")} /> {l.featured ? "Featured" : "Feature"}
-              </button>
+              </ActionButton>
               <div className="w-full sm:w-auto">
                 <NoteAction
                   label="Take down"
