@@ -9,7 +9,7 @@ import { nav } from "@/config/site";
 import { usePrefs } from "../providers";
 import { buttonClass, Logo } from "../ui/primitives";
 
-export function Navbar() {
+export function Navbar({ solid = false, active = "Buy" }: { solid?: boolean; active?: string }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { saved } = usePrefs();
@@ -22,7 +22,7 @@ export function Navbar() {
   }, []);
 
   // Over the hero photo the bar is transparent with light text; once scrolled it becomes themed glass.
-  const onPhoto = !scrolled && !open;
+  const onPhoto = !solid && !scrolled && !open;
 
   return (
     <header
@@ -35,18 +35,18 @@ export function Navbar() {
         <Logo onDark={onPhoto} />
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
-          {nav.map((item, i) => (
+          {nav.map((item) => (
             <Link
               key={item.label}
               href={item.href}
               className={clsx(
                 "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 onPhoto ? "text-white/80 hover:text-white" : "text-ink-2 hover:text-ink",
-                i === 0 && (onPhoto ? "text-white" : "text-ink"),
+                item.label === active && (onPhoto ? "text-white" : "text-ink"),
               )}
             >
               {item.label}
-              {i === 0 && <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-brand" />}
+              {item.label === active && <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-brand" />}
             </Link>
           ))}
         </nav>

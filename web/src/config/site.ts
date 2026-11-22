@@ -15,6 +15,6 @@ export const nav = [
   { label: "Buy", href: "/?purpose=buy" },
   { label: "Rent", href: "/?purpose=rent" },
   { label: "Projects", href: "/#projects" },
-  { label: "Map", href: "/#map" },
+  { label: "Map", href: "/map" },
   { label: "NRI Services", href: "/#nri" },
 ] as const;

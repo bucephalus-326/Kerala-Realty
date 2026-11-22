@@ -1,5 +1,5 @@
 import type { Listing, PropertyType, Purpose } from "@/data/listings";
-import { localities } from "@/data/places";
+import { localities } from "@/data/localities";
 
 /** Place-aware refinements, added from the follow-up question chips. */
 export interface Refinements {

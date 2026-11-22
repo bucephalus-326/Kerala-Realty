@@ -357,6 +357,46 @@ const localityOut = localities.map(({ weight, ...l }) => {
   };
 });
 
+/* ─────────────── 6. Metro lines ─────────────── */
+// OSM station points joined in official order. Pink Line is under construction:
+// only InfoPark station is mapped, so the route between is approximate.
+const BLUE_LINE = [
+  "Aluva", "Pulinchodu", "Companypady", "Ambattukavu", "Muttom", "Kalamassery Town", "Cochin University",
+  "Pathadipalam", "Edappally", "Changampuzha Park", "Palarivattom", "JLN Stadium", "Kaloor", "Town Hall",
+  "M. G. Road", "Maharaja's College", "Ernakulam South", "Kadavanthra", "Elamkulam", "Vyttila", "Thykoodam",
+  "Pettah", "Vadakkekotta", "SN Junction", "Thrippunithura Terminal",
+];
+const metroStations = byCat.metro ?? [];
+const norm = (s) => s.toLowerCase().replace(/[^a-z]/g, "");
+const station = (name) => metroStations.find((p) => norm(p.name).startsWith(norm(name)));
+const bluePts = BLUE_LINE.map((n) => {
+  const st = station(n);
+  if (!st) console.warn(`! metro station not found: ${n}`);
+  return st && { name: n, coords: st.coords };
+}).filter(Boolean);
+const infopark = station("InfoPark");
+const pinkPts = [
+  { name: "JLN Stadium", coords: station("JLN Stadium")?.coords },
+  { name: "Palarivattom", coords: [76.3092, 10.0072] },
+  { name: "Chembumukku", coords: [76.3185, 10.0128] },
+  { name: "Vazhakkala", coords: [76.3256, 10.0177] },
+  { name: "Padamugal", coords: [76.3316, 10.0204] },
+  { name: "Kakkanad Junction", coords: [76.3419, 10.0159] },
+  { name: "Cochin SEZ", coords: [76.3525, 10.0121] },
+  { name: "InfoPark", coords: infopark?.coords },
+].filter((p) => p.coords);
+function withTimes(pts) {
+  let t = 0;
+  return pts.map((p, i) => {
+    if (i) t += km(pts[i - 1].coords, p.coords);
+    return { ...p, t: +t.toFixed(3) };
+  });
+}
+const metroLines = [
+  { id: "blue", name: "Kochi Metro Line 1", status: "operational", stops: withTimes(bluePts) },
+  { id: "pink", name: "Kochi Metro Pink Line (Kakkanad)", status: "under_construction", approximate: true, stops: withTimes(pinkPts) },
+];
+
 /* ─────────────── write ─────────────── */
 const write = (name, data) => {
   writeFileSync(`${OUT}/${name}.json`, JSON.stringify(data));
@@ -367,6 +407,7 @@ write("listings", listings);
 write("price-grid", { cols: ["lng", "lat", "psf"], rows: grid });
 write("flood-zones", flood);
 write("localities", localityOut);
+write("metro-lines", metroLines);
 
 const counts = Object.fromEntries(Object.entries(byCat).map(([k, v]) => [k, v.length]));
 console.log("poi categories", counts);

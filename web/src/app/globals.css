@@ -172,3 +172,76 @@ body {
   .pulse-ring, .dash-flow, .rise { animation: none; }
   html { scroll-behavior: auto; }
 }
+
+/* ───────────── Map price pills ───────────── */
+.map-pill {
+  position: relative;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font: 600 12px/1 var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  color: #eafff3;
+  background: rgba(6, 18, 12, 0.88);
+  border: 1px solid rgba(62, 229, 142, 0.55);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 6px 18px -6px rgba(62, 229, 142, 0.55);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+.map-pill::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 8px;
+  height: 8px;
+  transform: translateX(-50%) rotate(45deg);
+  background: inherit;
+  border-right: inherit;
+  border-bottom: inherit;
+}
+.map-pill:hover { transform: translateY(-2px) scale(1.05); z-index: 2; }
+.map-pill[data-tier="luxury"] { border-color: rgba(227, 185, 92, 0.75); box-shadow: 0 6px 18px -6px rgba(227, 185, 92, 0.6); }
+.map-pill[data-tier="flood"] { border-color: rgba(255, 107, 97, 0.7); }
+.map-pill[data-selected="true"] {
+  background: #3ee58e;
+  color: #03140a;
+  border-color: #3ee58e;
+  transform: translateY(-3px) scale(1.12);
+  z-index: 3;
+  box-shadow: 0 0 0 4px rgba(62, 229, 142, 0.25), 0 10px 30px -6px rgba(62, 229, 142, 0.9);
+}
+:root:not(.dark) .map-pill:not([data-selected="true"]):not([data-compact="true"]) {
+  background: rgba(255, 255, 255, 0.94);
+  color: #0b1712;
+  box-shadow: 0 6px 18px -8px rgba(12, 32, 22, 0.35);
+}
+.map-pill[data-compact="true"] {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  font-size: 0;
+  background: #3ee58e;
+  border: 2px solid #05080a;
+  box-shadow: 0 0 0 3px rgba(62, 229, 142, 0.3), 0 0 14px rgba(62, 229, 142, 0.8);
+}
+.map-pill[data-compact="true"][data-tier="luxury"] { background: #e3b95c; box-shadow: 0 0 0 3px rgba(227, 185, 92, 0.3), 0 0 14px rgba(227, 185, 92, 0.8); }
+.map-pill[data-compact="true"][data-tier="flood"] { background: #ff8a70; }
+.map-pill[data-compact="true"]::after { display: none; }
+.map-pill[data-compact="true"]:hover,
+.map-pill[data-compact="true"]:focus-visible {
+  width: auto;
+  height: auto;
+  padding: 5px 10px;
+  font-size: 12px;
+  background: rgba(6, 18, 12, 0.92);
+  border: 1px solid rgba(62, 229, 142, 0.55);
+}
+/* Keep HTML markers above the deck.gl canvas. */
+.maplibregl-marker { z-index: 3; }
+.maplibregl-ctrl-attrib { font-size: 10px; }
+/* On phones the bottom of the map belongs to the sheet and draw button; credit goes top-right. */
+@media (max-width: 767px) {
+  .maplibregl-map .maplibregl-ctrl-bottom-right { top: 60px; bottom: auto; }
+}

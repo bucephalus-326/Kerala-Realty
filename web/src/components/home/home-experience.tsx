@@ -31,7 +31,7 @@ import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
 import { LOCALITIES, listings, TYPE_LABEL, type PropertyType } from "@/data/listings";
 import { CURRENCIES, formatPrice, regionFromTimeZone } from "@/lib/currency";
-import { localities } from "@/data/places";
+import { localities } from "@/data/localities";
 import {
   BUDGETS,
   DEFAULT_FILTERS,

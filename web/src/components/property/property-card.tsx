@@ -24,6 +24,7 @@ import {
   Waves,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { site } from "@/config/site";
 import { TYPE_LABEL, type Listing, type PoiCategory } from "@/data/listings";
 import { formatPrice } from "@/lib/currency";
@@ -137,9 +138,13 @@ export function PropertyCard({
 
         <div>
           <h3 className="line-clamp-1 font-medium text-ink">{l.title}</h3>
-          <p className="mt-0.5 flex items-center gap-1 text-[13px] text-ink-3">
+          <Link
+            href={`/map?listing=${l.id}`}
+            className="mt-0.5 flex w-fit items-center gap-1 text-[13px] text-ink-3 transition hover:text-brand"
+            title="View on map"
+          >
             <MapPin className="h-3.5 w-3.5 shrink-0" /> {l.locality}, {l.city}
-          </p>
+          </Link>
         </div>
 
         <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-ink-2">

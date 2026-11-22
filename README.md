@@ -18,6 +18,19 @@
 - Follow-up questions use these facts ("Only homes within 1 km of a metro", "Hide flood-prone pockets", "Compare Kakkanad with Edappally")
 - Price grid for the heatmap. See [`data/README.md`](data/README.md)
 
+## Stage 3: interactive map (done)
+`/map`: MapLibre GL + deck.gl on OpenFreeMap tiles (free, no API key), restyled dark and light.
+
+- Layers you can toggle: price heat (2D heatmap, or 3D hex columns that shrink as you zoom in), listing density, metro lines with animated light pulses (Pink Line marked under construction, approximate route), Water Metro, IT parks, hospitals, schools, demo flood zones
+- Price pills for every listing; they collapse to dots when zoomed out
+- Select a home: 1/2/3 km rings and 3D arcs to the nearest metro, IT park, hospital and Water Metro, with distances
+- Draw a search area on the map to filter homes inside it
+- Kochi, Trivandrum and Kozhikode camera presets; side list of homes in view with buy/rent, type and budget filters
+- Mobile: flat 2D map, bottom sheet list, layers behind a button
+- Every card's locality links to `/map?listing=<id>`
+
+![Map](docs/screenshots/9-map-selected.jpg)
+
 ## Run
 ```
 cd web

@@ -74,7 +74,7 @@ export function MobileTabBar() {
   const tabs = [
     { icon: Home, l: "Home", href: "/" },
     { icon: Search, l: "Search", href: "/#featured" },
-    { icon: Map, l: "Map", href: "/#map" },
+    { icon: Map, l: "Map", href: "/map" },
     { icon: Heart, l: "Saved", href: "/#featured" },
     { icon: User, l: "Account", href: "/#signin" },
   ];

@@ -25,7 +25,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { site } from "@/config/site";
 import { listings } from "@/data/listings";
-import { localities } from "@/data/places";
+import { localities } from "@/data/localities";
 import { CURRENCIES, formatPrice } from "@/lib/currency";
 import { usePrefs } from "../providers";
 import { buttonClass, SectionHeading } from "../ui/primitives";
@@ -149,7 +149,7 @@ export function MapPreview() {
               </button>
             ))}
           </div>
-          <Link href="/#map" className={clsx(buttonClass("primary", "md"), "mt-6")}>
+          <Link href="/map" className={clsx(buttonClass("primary", "md"), "mt-6")}>
             <Layers className="h-4 w-4" /> Open full map
           </Link>
         </div>
