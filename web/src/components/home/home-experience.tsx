@@ -29,7 +29,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LOCALITIES, listings, TYPE_LABEL, type PropertyType } from "@/data/listings";
+import { LOCALITIES, TYPE_LABEL, type PropertyType } from "@/data/listings";
+import { useListings } from "../listings-provider";
 import { CURRENCIES, formatPrice, regionFromTimeZone } from "@/lib/currency";
 import { localities } from "@/data/localities";
 import {
@@ -124,7 +125,8 @@ function Hero({
   onSearch: () => void;
   onPrompt: (p: Partial<Filters>) => void;
 }) {
-  const showcase = listings.find((l) => l.id === "L001")!;
+  const listings = useListings();
+  const showcase = listings.find((l) => l.id === "L001") ?? listings[0];
   const { currency } = usePrefs();
 
   return (
@@ -457,10 +459,11 @@ function Results({
   onReset: () => void;
   onRefine: (r: Refinements) => void;
 }) {
+  const listings = useListings();
   const active = isActive(filters);
-  const results = useMemo(() => filterListings(listings, filters), [filters]);
+  const results = useMemo(() => filterListings(listings, filters), [listings, filters]);
   const ranked = useMemo(() => rankListings(results, filters), [results, filters]);
-  const suggestions = useMemo(() => suggestNext(filters, listings), [filters]);
+  const suggestions = useMemo(() => suggestNext(filters, listings), [listings, filters]);
   const budgetLabel = BUDGETS[filters.purpose].find((b) => b.value === filters.budgetMax)?.label;
 
   if (!active) {

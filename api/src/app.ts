@@ -12,12 +12,14 @@ import { consentRouter } from "./routes/consent.js";
 import { listingsRouter } from "./routes/listings.js";
 import { meRouter } from "./routes/me.js";
 import { nriRouter } from "./routes/nri.js";
+import { documentsRouter, mediaRouter } from "./routes/media.js";
+import { portalRouter } from "./routes/portal.js";
 
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1); // behind Render / Vercel proxies
   app.disable("x-powered-by");
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
   // The web app calls the API through its own /api proxy (same origin). CORS is
   // only for direct calls during development.
   app.use(cors({ origin: config.webOrigin, credentials: true }));
@@ -36,6 +38,9 @@ export function createApp() {
   app.use("/admin", aiAdminRouter);
   app.use("/ai", aiRouter);
   app.use("/leads", leadsRouter);
+  app.use("/portal", portalRouter);
+  app.use("/media", mediaRouter);
+  app.use("/documents", documentsRouter);
 
   app.use((_req, _res, next) => next(new HttpError(404, "Not found", "not_found")));
   app.use(errorHandler);

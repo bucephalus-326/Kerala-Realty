@@ -55,6 +55,8 @@ export function readSession(req: Request, _res: Response, next: NextFunction) {
  */
 export function requireJson(req: Request, _res: Response, next: NextFunction) {
   if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+    // File uploads send raw bytes; the custom header plays the same CSRF role (it forces a preflight).
+    if (req.method === "POST" && /^\/(media|documents)\/?$/.test(req.path) && req.headers["x-kr-upload"] === "1") return next();
     const type = req.headers["content-type"] ?? "";
     if (!type.startsWith("application/json")) {
       return next(new HttpError(415, "Send the request body as JSON", "json_required"));

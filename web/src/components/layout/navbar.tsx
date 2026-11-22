@@ -12,7 +12,8 @@ import { buttonClass, Logo } from "../ui/primitives";
 export function Navbar({ solid = false, active = "Buy" }: { solid?: boolean; active?: string }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const { saved, session } = usePrefs();
+  const { saved, session, can } = usePrefs();
+  const listHref = can("listings:write_own") ? "/portal/listings/new" : "/signin?mode=register&role=owner";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -72,7 +73,7 @@ export function Navbar({ solid = false, active = "Buy" }: { solid?: boolean; act
           <ThemeToggle onPhoto={onPhoto} />
 
           <Link
-            href="/signin?mode=register&role=owner"
+            href={listHref}
             className={clsx(
               buttonClass("outline", "sm"),
               "max-md:hidden",
@@ -124,7 +125,7 @@ export function Navbar({ solid = false, active = "Buy" }: { solid?: boolean; act
             ))}
           </nav>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Link href="/signin?mode=register&role=owner" onClick={() => setOpen(false)} className={buttonClass("outline", "md")}>
+            <Link href={listHref} onClick={() => setOpen(false)} className={buttonClass("outline", "md")}>
               <Plus className="h-4 w-4" /> List Property
             </Link>
             <Link href={session ? "/account" : "/signin"} onClick={() => setOpen(false)} className={buttonClass("primary", "md")}>

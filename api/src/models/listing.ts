@@ -32,7 +32,19 @@ const listingSchema = new Schema(
     amenities: [String],
     postedBy: { kind: String, name: String },
     ownerId: { type: Schema.Types.ObjectId, ref: "User", index: true },
-    status: { type: String, enum: ["draft", "pending", "published", "sold", "rented", "unavailable"], default: "published", index: true },
+    status: { type: String, enum: ["draft", "pending", "rejected", "published", "sold", "rented", "unavailable", "removed"], default: "published", index: true },
+    description: { type: String, maxlength: 2000 },
+    /** YouTube or Vimeo link (videos are linked, not stored, to stay within free storage). */
+    videoUrl: String,
+    /** Possession date for new projects, e.g. "Dec 2028". */
+    possession: String,
+    /** Private vault documents attached to this listing (GridFS ids). */
+    documentIds: { type: [String], default: [] },
+    /** False until the owner places the map pin (new drafts start with a placeholder point). */
+    pinned: { type: Boolean, default: true },
+    reviewNote: String,
+    submittedAt: Date,
+    publishedAt: Date,
     nearby: Schema.Types.Mixed,
     counts: Schema.Types.Mixed,
     highlights: Schema.Types.Mixed,
@@ -46,3 +58,22 @@ const listingSchema = new Schema(
 listingSchema.index({ location: "2dsphere" });
 
 export const Listing = model("Listing", listingSchema);
+
+/** Atomic counters (listing ids). */
+const counterSchema = new Schema({ _id: String, seq: { type: Number, default: 0 } });
+export const Counter = model("Counter", counterSchema);
+
+export async function nextListingId() {
+  // Start after the highest seeded id the first time.
+  if (!(await Counter.exists({ _id: "listing" }))) {
+    const ids = (await Listing.find({}, { _id: 1 }).lean()).map((l) => Number(String(l._id).slice(1)) || 0);
+    await Counter.updateOne({ _id: "listing" }, { $setOnInsert: { seq: Math.max(0, ...ids) } }, { upsert: true });
+  }
+  const c = await Counter.findOneAndUpdate({ _id: "listing" }, { $inc: { seq: 1 } }, { new: true });
+  return `L${String(c!.seq).padStart(3, "0")}`;
+}
+
+/** One row per listing, day and visitor: deduplicated page views. */
+const viewSchema = new Schema({ listingId: { type: String, index: true }, day: String, visitor: String });
+viewSchema.index({ listingId: 1, day: 1, visitor: 1 }, { unique: true });
+export const ListingView = model("ListingView", viewSchema);

@@ -29,6 +29,7 @@ import { useState } from "react";
 import { site } from "@/config/site";
 import { TYPE_LABEL, type Listing, type PoiCategory } from "@/data/listings";
 import { formatPrice } from "@/lib/currency";
+import { isUpload } from "../listings-provider";
 import { usePrefs } from "../providers";
 import { VisitDialog } from "../visits/visit-dialog";
 import { buttonClass, ReraBadge } from "../ui/primitives";
@@ -87,6 +88,7 @@ export function PropertyCard({
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface-strong shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-line-strong hover:shadow-float">
       <div className="relative aspect-[4/3] overflow-hidden">
         <Image
+          unoptimized={isUpload(l.images[0])}
           src={l.images[0]}
           alt={`${l.title} in ${l.locality}`}
           fill
@@ -120,7 +122,7 @@ export function PropertyCard({
           onClick={() => toggleSaved(l.id)}
           aria-label={isSaved ? "Remove from saved" : "Save property"}
           aria-pressed={isSaved}
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-md transition hover:scale-110"
+          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-md transition hover:scale-110"
         >
           <Heart className={clsx("h-[17px] w-[17px] transition", isSaved && "fill-[#ff5a6e] text-[#ff5a6e]")} />
         </button>
@@ -140,10 +142,14 @@ export function PropertyCard({
         </div>
 
         <div>
-          <h3 className="line-clamp-1 font-medium text-ink">{l.title}</h3>
+          <h3 className="line-clamp-1 font-medium text-ink">
+            <Link href={`/listings/${l.id}`} className="after:absolute after:inset-0 after:content-[''] hover:text-brand">
+              {l.title}
+            </Link>
+          </h3>
           <Link
             href={`/map?listing=${l.id}`}
-            className="mt-0.5 flex w-fit items-center gap-1 text-[13px] text-ink-3 transition hover:text-brand"
+            className="relative z-10 mt-0.5 flex w-fit items-center gap-1 text-[13px] text-ink-3 transition hover:text-brand"
             title="View on map"
           >
             <MapPin className="h-3.5 w-3.5 shrink-0" /> {l.locality}, {l.city}
@@ -208,7 +214,7 @@ export function PropertyCard({
           </p>
         )}
 
-        <div className="mt-auto grid grid-cols-[auto_1fr] gap-2 pt-1">
+        <div className="relative z-10 mt-auto grid grid-cols-[auto_1fr] gap-2 pt-1">
           <button onClick={() => setBooking(true)} className={buttonClass("outline", "sm")} aria-label={`Book a visit to ${l.title}`}>
             <CalendarPlus className="h-4 w-4" /> Visit
           </button>

@@ -6,7 +6,7 @@ import { notFound, parse } from "../lib/http.js";
 import { ConciergeRequest, Visit } from "../models/activity.js";
 import { Listing } from "../models/listing.js";
 import { publicUser, User, type UserDoc } from "../models/user.js";
-import { toClient } from "./listings.js";
+import { publicView as toClient } from "./listings.js";
 import { visitToClient } from "./me.js";
 
 export const nriRouter = Router();

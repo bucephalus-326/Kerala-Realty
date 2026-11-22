@@ -71,3 +71,21 @@ export const ROLE_LABEL: Record<Role, string> = {
   agent: "Agent / Builder",
   admin: "Admin",
 };
+
+/** Upload a file as the raw request body (see the API's upload CSRF rule). */
+export async function uploadFile<T>(path: string, file: Blob, headers: Record<string, string> = {}): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": file.type || "application/octet-stream", "X-KR-Upload": "1", ...headers },
+      body: file,
+    });
+  } catch {
+    throw new ApiError(0, "offline", "Upload failed. Check your connection and try again.");
+  }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new ApiError(res.status, data?.error?.code ?? "error", data?.error?.message ?? "Upload failed", data?.error?.fields);
+  return data as T;
+}

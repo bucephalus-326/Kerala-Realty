@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { api, type Session, type User } from "@/lib/api";
 import { currencyFromTimeZone, type Currency } from "@/lib/currency";
+import { ListingsProvider } from "./listings-provider";
 
 export type LandUnit = "cents" | "sqft";
 export interface ConsentChoices {
@@ -249,7 +250,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
-      <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>
+      <PrefsContext.Provider value={value}>
+        <ListingsProvider>{children}</ListingsProvider>
+      </PrefsContext.Provider>
     </ThemeProvider>
   );
 }

@@ -67,6 +67,15 @@ Set `GEMINI_API_KEY` on the API host to turn the AI on; without it the assistant
 
 ![Assistant](docs/screenshots/16-assistant-flow.jpg)
 
+## Stage 6: owner and agent portal (in progress: review fixes pending)
+- `/portal`: listings with views, saves, visits and leads; visit requests (confirm, decline, mark done; buyer contact shared only after confirming); enquiries; document vault and profile verification uploads.
+- Six-step listing editor: basics, location (map pin; nearby places and flood risk computed on save), details (price, area, amenities, K-RERA with format check, new-project fields for agents), photos (resized in the browser to WebP, reorder, cover) and video link, private documents (SHA-256 fingerprint, every view audited), review.
+- Lifecycle: draft → in review → live → sold / rented / paused. Price and description edits stay live; location and type changes go back to review. Admin approve/reject endpoint (UI comes with the admin console).
+- Public listing page `/listings/[id]` (server-rendered from the API) and the whole site now reads live listings from the API, so new homes appear in search, the map and the assistant.
+- Files are stored in MongoDB GridFS (no extra service). 47 API tests.
+
+Open items from the stage 6 Ponytail review are listed in the commit message and will be fixed before merging.
+
 ## Run locally
 
 Two terminals:

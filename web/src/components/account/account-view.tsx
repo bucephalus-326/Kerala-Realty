@@ -23,7 +23,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { site } from "@/config/site";
-import { listings } from "@/data/listings";
+import { isUpload, useListings } from "../listings-provider";
 import { api, ApiError, ROLE_LABEL, type User, type Visit } from "@/lib/api";
 import { CURRENCIES, formatPrice, type Currency } from "@/lib/currency";
 import { sameAsIST } from "@/lib/time";
@@ -153,7 +153,7 @@ function BuyerDashboard() {
 
 function SavedHomes({ title = "Saved homes" }: { title?: string }) {
   const { saved } = usePrefs();
-  const items = listings.filter((l) => saved.has(l.id));
+  const items = useListings().filter((l) => saved.has(l.id));
   return (
     <Panel title={title} icon={Heart} action={<span className="text-sm text-ink-3">{items.length}</span>}>
       {items.length === 0 ? (
@@ -203,7 +203,7 @@ function VisitsPanel({ visits }: { visits?: Visit[] }) {
             <li key={v.id} className="flex gap-3 rounded-2xl border border-line p-3">
               {v.listing?.image && (
                 <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
-                  <Image src={v.listing.image} alt="" fill sizes="64px" className="object-cover" />
+                  <Image unoptimized={isUpload(v.listing.image)} src={v.listing.image} alt="" fill sizes="64px" className="object-cover" />
                 </span>
               )}
               <div className="min-w-0 flex-1">
@@ -305,7 +305,7 @@ function NriDashboard() {
   }, []);
   useEffect(load, [load]);
   const tz = session!.user.preferences.timeZone;
-  const shortlist = listings.filter((l) => saved.has(l.id));
+  const shortlist = useListings().filter((l) => saved.has(l.id));
 
   return (
     <div className="space-y-6">
@@ -337,7 +337,7 @@ function NriDashboard() {
                     <td className="py-3 pr-3">
                       <Link href={`/map?listing=${l.id}`} className="flex items-center gap-3 hover:text-brand">
                         <span className="relative h-11 w-14 shrink-0 overflow-hidden rounded-lg">
-                          <Image src={l.images[0]} alt="" fill sizes="56px" className="object-cover" />
+                          <Image unoptimized={isUpload(l.images[0])} src={l.images[0]} alt="" fill sizes="56px" className="object-cover" />
                         </span>
                         <span className="min-w-0">
                           <span className="block truncate font-medium">{l.title}</span>
@@ -485,85 +485,18 @@ function ConciergePanel({ requests, onSent }: { requests: NriData["requests"] | 
 
 /* ───────────── Owner / Agent ───────────── */
 
-interface OwnListing {
-  id: string;
-  title: string;
-  locality: string;
-  price: number;
-  purpose: "buy" | "rent";
-  status: string;
-  images: string[];
-  visitRequests: number;
-}
-
 function PortalDashboard({ user }: { user: User }) {
-  const { currency } = usePrefs();
-  const [items, setItems] = useState<OwnListing[] | null>(null);
-  useEffect(() => {
-    api<{ items: OwnListing[] }>("/me/listings")
-      .then((r) => setItems(r.items))
-      .catch(() => setItems([]));
-  }, []);
   return (
     <div className="space-y-6">
-      {user.verification === "pending" && (
-        <div className="flex items-start gap-3 rounded-2xl border border-[#e3b95c]/40 bg-gold-soft p-4 text-sm">
-          <Hourglass className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
-          <p>
-            <b>Your profile is being verified.</b> You can prepare listings now; they go live once our team has checked
-            your ID{user.role === "agent" ? " and K-RERA agent registration" : " and ownership documents"}.
-          </p>
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-brand/30 bg-brand-soft p-6">
+        <div>
+          <p className="font-display text-xl font-semibold">{user.role === "agent" ? "Agent & builder portal" : "Owner portal"}</p>
+          <p className="mt-1 text-sm text-ink-2">Add and edit listings, answer visit requests and enquiries, upload documents and see how each home performs.</p>
         </div>
-      )}
-      <Panel
-        title={user.role === "agent" ? "Your listings and projects" : "Your listings"}
-        icon={BadgeCheck}
-        action={<span className="rounded-full bg-muted px-2.5 py-1 text-xs text-ink-3">Adding and editing comes with the owner portal</span>}
-      >
-        {items === null ? (
-          <Loader2 className="h-5 w-5 animate-spin text-ink-3" />
-        ) : items.length === 0 ? (
-          <Empty text="No listings yet." />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-sm">
-              <thead className="text-xs text-ink-3">
-                <tr>
-                  <th className="pb-2 font-medium">Listing</th>
-                  <th className="pb-2 font-medium">Status</th>
-                  <th className="pb-2 text-right font-medium">Price</th>
-                  <th className="pb-2 text-right font-medium">Visit requests</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((l) => (
-                  <tr key={l.id} className="border-t border-line">
-                    <td className="py-3 pr-3">
-                      <span className="flex items-center gap-3">
-                        <span className="relative h-11 w-14 shrink-0 overflow-hidden rounded-lg">
-                          <Image src={l.images[0]} alt="" fill sizes="56px" className="object-cover" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium">{l.title}</span>
-                          <span className="block text-xs text-ink-3">{l.locality}</span>
-                        </span>
-                      </span>
-                    </td>
-                    <td className="py-3">
-                      <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium capitalize text-brand">{l.status}</span>
-                    </td>
-                    <td className="py-3 text-right tabular-nums">
-                      {formatPrice(l.price, currency)}
-                      {l.purpose === "rent" && <span className="text-xs text-ink-3">/mo</span>}
-                    </td>
-                    <td className="py-3 text-right tabular-nums">{l.visitRequests}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Panel>
+        <Link href="/portal" className={buttonClass("primary", "md")}>
+          Open the portal
+        </Link>
+      </section>
       <LeadsPanel path="/leads/mine" />
       <PreferencesPanel />
     </div>

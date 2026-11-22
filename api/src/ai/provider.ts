@@ -1,6 +1,6 @@
 /**
  * OpenAI-compatible chat + embeddings client with provider fallback.
- * Gemini (free tier) first; optional Groq / OpenRouter keys add free fallbacks.
+ * Gemini (free tier) first; optional OmniRoute, Groq and OpenRouter add free fallbacks.
  * A provider is only used when its key is set.
  */
 export interface ChatMessage {
@@ -36,6 +36,14 @@ function providers(): Provider[] {
       baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
       key: env.GEMINI_API_KEY,
       models: (env.GEMINI_MODELS ?? "gemini-flash-lite-latest,gemini-flash-latest,gemini-2.5-flash").split(","),
+    });
+  // OmniRoute: self-hosted OpenAI-compatible router that fans out to other free providers.
+  if (env.OMNIROUTE_URL)
+    list.push({
+      name: "omniroute",
+      baseUrl: env.OMNIROUTE_URL.replace(/\/$/, ""),
+      key: env.OMNIROUTE_API_KEY ?? "",
+      models: (env.OMNIROUTE_MODELS ?? "auto").split(","),
     });
   if (env.GROQ_API_KEY)
     list.push({ name: "groq", baseUrl: "https://api.groq.com/openai/v1", key: env.GROQ_API_KEY, models: [env.GROQ_MODEL ?? "llama-3.1-8b-instant"] });

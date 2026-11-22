@@ -1,19 +1,20 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowRight, ArrowUp, Heart, LayoutGrid, Loader2, MapPin, Phone, RotateCcw, Sparkles, X, Zap } from "lucide-react";
+import { ArrowRight, ArrowUp, Heart, LayoutGrid, Loader2, MapPin, RotateCcw, Sparkles, X, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { api, ApiError } from "@/lib/api";
 import { formatPrice } from "@/lib/currency";
 import { applySearchOnPage } from "@/lib/search";
+import { isUpload } from "../listings-provider";
+import { LeadForm } from "../leads/lead-form";
 import { usePrefs } from "../providers";
 import { buttonClass } from "../ui/primitives";
 import { type AssistantReply, type CardListing, type CompareRow, useAssistant } from "./use-assistant";
 
-const HIDDEN_ON = ["/map", "/signin"];
+const HIDDEN_ON = ["/map", "/signin", "/portal"];
 const NUDGE_KEY = "assistant.nudged";
 
 export function Assistant() {
@@ -27,6 +28,7 @@ export function Assistant() {
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const onHome = pathname === "/";
+  const compact = pathname.startsWith("/listings/");
 
   // Proactive suggestion once per session, a few seconds after landing on the home page.
   useEffect(() => {
@@ -118,11 +120,12 @@ export function Assistant() {
           className={clsx(
             "fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] right-4 z-[55] flex h-14 items-center gap-2 rounded-full bg-brand pl-4 pr-5 font-medium text-brand-ink shadow-[0_12px_40px_-8px_var(--glow)] transition hover:scale-[1.03] max-md:w-14 max-md:justify-center max-md:p-0 md:bottom-6 md:right-6",
             !consent && "max-md:hidden", // the consent banner owns the bottom of small screens until answered
+            compact && "md:w-14 md:justify-center md:p-0", // icon only where a sticky panel sits bottom-right
           )}
           aria-label="Open property assistant"
         >
           <Sparkles className="h-5 w-5" />
-          <span className="max-md:hidden">Ask the assistant</span>
+          <span className={clsx("max-md:hidden", compact && "md:hidden")}>Ask the assistant</span>
         </button>
       )}
 
@@ -286,7 +289,7 @@ function MiniCard({ l }: { l: CardListing }) {
   return (
     <div className="flex gap-3 rounded-2xl border border-line bg-surface-strong p-2">
       <Link href={`/map?listing=${l.id}`} className="relative h-[72px] w-[84px] shrink-0 overflow-hidden rounded-xl" aria-label={`View ${l.title} on the map`}>
-        {l.image && <Image src={l.image} alt="" fill sizes="84px" className="object-cover" />}
+        {l.image && <Image unoptimized={isUpload(l.image)} src={l.image} alt="" fill sizes="84px" className="object-cover" />}
       </Link>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
@@ -358,62 +361,5 @@ function CompareTable({ rows }: { rows: CompareRow[] }) {
         </tbody>
       </table>
     </div>
-  );
-}
-
-function LeadForm({ listingIds, filters }: { listingIds: string[]; filters?: unknown }) {
-  const { session, timeZone } = usePrefs();
-  const [name, setName] = useState(session?.user.name ?? "");
-  const [phone, setPhone] = useState(session?.user.phone ?? "");
-  const [when, setWhen] = useState("Evening (5–8 PM IST)");
-  const [agree, setAgree] = useState(false);
-  const [state, setState] = useState<"idle" | "busy" | "done">("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  if (state === "done")
-    return (
-      <p className="flex items-center gap-2 rounded-xl bg-brand-soft px-3 py-2.5 text-[13px] text-brand">
-        <Phone className="h-4 w-4" /> Thanks! An advisor will call you {when.toLowerCase()}.
-      </p>
-    );
-
-  return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setState("busy");
-        setError(null);
-        try {
-          await api("/leads", {
-            method: "POST",
-            body: { name, phone, preferredTime: when, timeZone, listingIds, filters, source: "assistant", consent: agree || undefined },
-          });
-          setState("done");
-        } catch (err) {
-          const e = err as ApiError;
-          setError(e.fields ? Object.values(e.fields)[0]?.[0] ?? e.message : e.message);
-          setState("idle");
-        }
-      }}
-      className="space-y-2 rounded-2xl border border-line bg-surface-strong p-3"
-    >
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" aria-label="Your name" autoComplete="name" className="h-10 w-full rounded-xl border border-line-strong bg-transparent px-3 text-sm text-ink outline-none focus:border-brand" />
-      <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone with country code, e.g. +971 50…" aria-label="Phone" autoComplete="tel" inputMode="tel" className="h-10 w-full rounded-xl border border-line-strong bg-transparent px-3 text-sm text-ink outline-none focus:border-brand" />
-      <select value={when} onChange={(e) => setWhen(e.target.value)} aria-label="Best time to call" className="h-10 w-full rounded-xl border border-line-strong bg-transparent px-2 text-sm text-ink">
-        {["Morning (9–12 IST)", "Afternoon (12–5 PM IST)", "Evening (5–8 PM IST)", "Weekend"].map((t) => (
-          <option key={t} className="bg-elevated">
-            {t}
-          </option>
-        ))}
-      </select>
-      <label className="flex items-start gap-2 text-[12px] text-ink-2">
-        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--brand)]" />
-        I agree to be called about these homes. My number is used only for this.
-      </label>
-      {error && <p className="text-[12px] text-danger">{error}</p>}
-      <button disabled={state === "busy" || !name || !phone || !agree} className={clsx(buttonClass("primary", "sm"), "w-full")}>
-        {state === "busy" && <Loader2 className="h-4 w-4 animate-spin" />} Request a call back
-      </button>
-    </form>
   );
 }

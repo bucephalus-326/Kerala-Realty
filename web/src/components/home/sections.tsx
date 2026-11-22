@@ -24,7 +24,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { site } from "@/config/site";
-import { listings } from "@/data/listings";
+import { useListings } from "../listings-provider";
 import { localities } from "@/data/localities";
 import { CURRENCIES, formatPrice } from "@/lib/currency";
 import { usePrefs } from "../providers";
@@ -117,7 +117,7 @@ const LAYERS = [
 
 export function MapPreview() {
   const [on, setOn] = useState<Record<string, boolean>>({ price: true, metro: true, it: true, flood: false });
-  const kochi = listings.filter((l) => l.city === "Kochi");
+  const kochi = useListings().filter((l) => l.city === "Kochi");
   const infopark = px(76.3633, 10.0098);
   const smartcity = px(76.3735, 10.0005);
 
@@ -252,7 +252,8 @@ const NRI_SERVICES = [
 
 export function NriConcierge() {
   const { currency, setCurrency, timeZone } = usePrefs();
-  const sample = listings.find((l) => l.id === "L015")!;
+  const listings = useListings();
+  const sample = listings.find((l) => l.id === "L015") ?? listings[0];
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {

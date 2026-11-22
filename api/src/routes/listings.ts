@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requirePermission } from "../auth/rbac.js";
 import { notFound, parse } from "../lib/http.js";
-import { Listing } from "../models/listing.js";
+import { Listing, ListingView } from "../models/listing.js";
 
 export const listingsRouter = Router();
 
@@ -13,7 +13,7 @@ const querySchema = z.object({
   city: z.string().max(40).optional(),
   q: z.string().max(60).optional(),
   ids: z.string().max(2000).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(24),
+  limit: z.coerce.number().int().min(1).max(500).default(24),
   page: z.coerce.number().int().min(1).default(1),
 });
 
@@ -35,14 +35,35 @@ listingsRouter.get("/", requirePermission("listings:read"), async (req, res) => 
     Listing.find(filter).sort({ postedAt: -1 }).skip((q.page - 1) * q.limit).limit(q.limit).lean(),
     Listing.countDocuments(filter),
   ]);
-  res.json({ items: items.map(toClient), total, page: q.page });
+  res.json({ items: items.map(publicView), total, page: q.page });
+});
+
+/** Count a page view once per visitor per day. Never fails the page. */
+listingsRouter.post("/:id/view", async (req, res) => {
+  const id = String(req.params.id);
+  const visitor = req.user ? `u:${req.user.id}` : `a:${String(req.cookies?.kr_anon ?? req.ip)}`;
+  await ListingView.updateOne(
+    { listingId: id, day: new Date().toISOString().slice(0, 10), visitor },
+    { $setOnInsert: { listingId: id } },
+    { upsert: true },
+  ).catch(() => {});
+  res.json({ ok: true });
 });
 
 listingsRouter.get("/:id", requirePermission("listings:read"), async (req, res) => {
   const l = await Listing.findOne({ _id: String(req.params.id), status: "published" }).lean();
   if (!l) throw notFound("Listing");
-  res.json(toClient(l));
+  res.json(publicView(l));
 });
+
+/** Public shape: hides vault document ids and moderation notes. */
+export function publicView(l: object) {
+  const { documentIds, reviewNote, submittedAt, ...rest } = toClient(l) as Record<string, unknown>;
+  void documentIds;
+  void reviewNote;
+  void submittedAt;
+  return rest;
+}
 
 /** Back to the web app's shape: `id` and `coords` instead of `_id` and GeoJSON. */
 export function toClient(l: object) {

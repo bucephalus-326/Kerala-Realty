@@ -26,7 +26,8 @@ import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { site } from "@/config/site";
 import metroLinesRaw from "@/data/generated/metro-lines.json";
-import { listings, TYPE_LABEL, type Listing, type PropertyType, type Purpose } from "@/data/listings";
+import { TYPE_LABEL, type Listing, type PropertyType, type Purpose } from "@/data/listings";
+import { isUpload, useListings } from "../listings-provider";
 import { floodZones, pois, priceGrid } from "@/data/places";
 import { formatPrice } from "@/lib/currency";
 import { inPolygon, km } from "@/lib/geo";
@@ -66,6 +67,7 @@ const LINK_COLORS: Record<string, [number, number, number, number]> = {
 };
 
 export function MapExplorer() {
+  const listings = useListings();
   const params = useSearchParams();
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme !== "light";
@@ -117,14 +119,14 @@ export function MapExplorer() {
   const filtered = useMemo(() => {
     const base = filterListings(listings, { ...DEFAULT_FILTERS, purpose, type, budgetMax });
     return area ? base.filter((l) => inPolygon(l.coords, area)) : base;
-  }, [purpose, type, budgetMax, area]);
+  }, [listings, purpose, type, budgetMax, area]);
 
   const inView = useMemo(() => {
     const visible = bounds ? filtered.filter((l) => bounds.contains(l.coords)) : filtered;
     return rankListings(visible, { ...DEFAULT_FILTERS, purpose, type, budgetMax }).map((r) => r.listing);
   }, [filtered, bounds, purpose, type, budgetMax]);
 
-  const selected = useMemo(() => listings.find((l) => l.id === selectedId) ?? null, [selectedId]);
+  const selected = useMemo(() => listings.find((l) => l.id === selectedId) ?? null, [listings, selectedId]);
 
   const links = useMemo(() => {
     if (!selected) return [];
@@ -625,7 +627,7 @@ function MiniCard({ listing: l, active, onClick }: { listing: Listing; active: b
       )}
     >
       <span className="relative h-[76px] w-[92px] shrink-0 overflow-hidden rounded-xl">
-        <Image src={l.images[0]} alt="" fill sizes="92px" className="object-cover" />
+        <Image unoptimized={isUpload(l.images[0])} src={l.images[0]} alt="" fill sizes="92px" className="object-cover" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-display text-[15px] font-semibold">
@@ -653,7 +655,7 @@ function SelectedCard({ listing: l, links, onClose }: { listing: Listing; links:
   return (
     <article className="glass overflow-hidden rounded-3xl shadow-float">
       <div className="relative h-28">
-        <Image src={l.images[0]} alt={l.title} fill sizes="360px" className="object-cover" />
+        <Image unoptimized={isUpload(l.images[0])} src={l.images[0]} alt={l.title} fill sizes="360px" className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         <button onClick={onClose} aria-label="Close" className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-black/45 text-white backdrop-blur">
           <X className="h-4 w-4" />
