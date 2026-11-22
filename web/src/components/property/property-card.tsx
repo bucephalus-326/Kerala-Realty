@@ -1,15 +1,49 @@
 "use client";
 
 import clsx from "clsx";
-import { Bath, BedDouble, Box, Heart, LandPlot, MapPin, MessageCircle, Navigation, Ruler, Sparkles } from "lucide-react";
+import {
+  Bath,
+  BedDouble,
+  Box,
+  Bus,
+  Cpu,
+  GraduationCap,
+  Heart,
+  Hospital,
+  LandPlot,
+  MapPin,
+  MessageCircle,
+  Plane,
+  Ruler,
+  School,
+  Ship,
+  ShoppingBag,
+  Sparkles,
+  TrainFront,
+  TramFront,
+  Waves,
+} from "lucide-react";
 import Image from "next/image";
 import { site } from "@/config/site";
-import { TYPE_LABEL, type Listing } from "@/data/listings";
+import { TYPE_LABEL, type Listing, type PoiCategory } from "@/data/listings";
 import { formatPrice } from "@/lib/currency";
 import { usePrefs } from "../providers";
 import { buttonClass, ReraBadge } from "../ui/primitives";
 
 const SQFT_PER_CENT = 435.6;
+
+const POI_ICON: Record<PoiCategory, React.ElementType> = {
+  metro: TramFront,
+  water_metro: Ship,
+  rail: TrainFront,
+  it_park: Cpu,
+  hospital: Hospital,
+  school: School,
+  college: GraduationCap,
+  mall: ShoppingBag,
+  bus: Bus,
+  airport: Plane,
+};
 
 export function PropertyCard({
   listing: l,
@@ -43,7 +77,6 @@ export function PropertyCard({
       ? `${l.landCents} cents`
       : `${Math.round(l.landCents * SQFT_PER_CENT).toLocaleString("en-IN")} sq.ft`);
 
-  const nearest = [...l.highlights].sort((a, b) => a.km - b.km)[0];
   const waText = encodeURIComponent(`Hi, I'm interested in "${l.title}" (${l.id}) in ${l.locality}. Is it available?`);
 
   return (
@@ -141,11 +174,30 @@ export function PropertyCard({
             ))}
           </ul>
         ) : (
-          nearest && (
-            <p className="inline-flex w-fit items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-ink-2">
-              <Navigation className="h-3.5 w-3.5 text-water" /> {nearest.km} km to {nearest.label}
-            </p>
+          l.highlights.length > 0 && (
+            <ul className="flex flex-col gap-1 text-xs text-ink-2">
+              {l.highlights.map((h) => {
+                const Icon = POI_ICON[h.category];
+                return (
+                  <li key={h.label} className="flex min-w-0 items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5 shrink-0 text-water" />
+                    <span className="truncate">
+                      {h.category === "school" ? h.label : `${h.km} km · ${h.label}`}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           )
+        )}
+
+        {l.flood.level !== "low" && (
+          <p
+            className="inline-flex w-fit items-center gap-1.5 rounded-full bg-danger/10 px-2.5 py-1 text-[11.5px] font-medium text-danger"
+            title={`${l.flood.zone} (demo flood layer, not official data)`}
+          >
+            <Waves className="h-3.5 w-3.5" /> {l.flood.level === "high" ? "High" : "Moderate"} monsoon flood risk
+          </p>
         )}
 
         <div className="mt-auto grid grid-cols-[auto_1fr] gap-2 pt-1">

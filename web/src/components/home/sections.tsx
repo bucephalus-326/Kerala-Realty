@@ -25,20 +25,23 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { site } from "@/config/site";
 import { listings } from "@/data/listings";
+import { localities } from "@/data/places";
 import { CURRENCIES, formatPrice } from "@/lib/currency";
 import { usePrefs } from "../providers";
 import { buttonClass, SectionHeading } from "../ui/primitives";
 
 /* ─────────────────────────── Localities ─────────────────────────── */
 
-const LOCALITY_STATS = [
-  { name: "Kakkanad", city: "Kochi", img: "/img/villa-6.jpg", psf: 5900, yoy: 9.1, note: "IT corridor · Infopark" },
-  { name: "Edappally", city: "Kochi", img: "/img/apt-1.jpg", psf: 7400, yoy: 6.8, note: "Metro · Lulu · hospitals" },
-  { name: "Vyttila", city: "Kochi", img: "/img/villa-7.jpg", psf: 6600, yoy: 5.2, note: "Mobility hub · Water Metro" },
-  { name: "Fort Kochi", city: "Kochi", img: "/img/villa-8.jpg", psf: 9800, yoy: 4.1, note: "Heritage · waterfront" },
-  { name: "Kazhakkoottam", city: "Trivandrum", img: "/img/house-2.jpg", psf: 5200, yoy: 7.5, note: "Technopark · airport" },
-  { name: "Mavoor Road", city: "Kozhikode", img: "/img/villa-3.jpg", psf: 4600, yoy: 6.2, note: "Cyberpark · medical college" },
+// Presentation only (photo + one-liner). Prices and counts come from generated data.
+const LOCALITY_CARDS = [
+  { name: "Kakkanad", img: "/img/villa-6.jpg", note: "IT corridor · Infopark · SmartCity" },
+  { name: "Edappally", img: "/img/apt-1.jpg", note: "Metro · Lulu · hospitals" },
+  { name: "Vyttila", img: "/img/villa-7.jpg", note: "Mobility hub · Water Metro" },
+  { name: "Fort Kochi", img: "/img/villa-8.jpg", note: "Heritage · waterfront" },
+  { name: "Kazhakkoottam", img: "/img/house-2.jpg", note: "Technopark · airport" },
+  { name: "Mavoor Road", img: "/img/villa-3.jpg", note: "Cyberpark · medical college" },
 ];
+const LOCALITY_STATS = LOCALITY_CARDS.map((c) => ({ ...localities.find((l) => l.name === c.name)!, ...c }));
 
 export function LocalityGrid() {
   const { currency } = usePrefs();
@@ -51,7 +54,7 @@ export function LocalityGrid() {
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {LOCALITY_STATS.map((l, i) => {
-          const count = listings.filter((x) => x.locality === l.name).length;
+          const count = l.listingCount;
           return (
             <Link
               key={l.name}

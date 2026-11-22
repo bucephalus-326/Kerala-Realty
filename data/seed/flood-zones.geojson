@@ -1,0 +1,36 @@
+{
+  "type": "FeatureCollection",
+  "_note": "DEMO ONLY. Hand-drawn approximations of commonly flood-affected low-lying belts, for UI development. Replace with KSDMA flood hazard maps before any real use.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": "FZ1", "name": "Periyar banks (Aluva to Eloor)", "risk": "high" },
+      "geometry": { "type": "Polygon", "coordinates": [[[76.335, 10.118], [76.372, 10.112], [76.366, 10.096], [76.338, 10.082], [76.312, 10.074], [76.296, 10.081], [76.305, 10.094], [76.335, 10.118]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "FZ2", "name": "Vypin coastal belt", "risk": "medium" },
+      "geometry": { "type": "Polygon", "coordinates": [[[76.214, 10.03], [76.232, 10.03], [76.236, 9.992], [76.224, 9.975], [76.212, 9.99], [76.214, 10.03]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "FZ3", "name": "Chilavannur and Elamkulam low-lying pockets", "risk": "medium" },
+      "geometry": { "type": "Polygon", "coordinates": [[[76.303, 9.976], [76.316, 9.975], [76.318, 9.958], [76.31, 9.95], [76.301, 9.956], [76.303, 9.976]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "FZ4", "name": "Kadambrayar wetlands (east of Infopark)", "risk": "medium" },
+      "geometry": { "type": "Polygon", "coordinates": [[[76.366, 10.034], [76.384, 10.03], [76.386, 10.004], [76.372, 9.996], [76.364, 10.006], [76.366, 10.034]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "FZ5", "name": "Akkulam lake edge", "risk": "medium" },
+      "geometry": { "type": "Polygon", "coordinates": [[[76.888, 8.538], [76.902, 8.536], [76.903, 8.522], [76.892, 8.518], [76.886, 8.526], [76.888, 8.538]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "FZ6", "name": "Canoli canal banks", "risk": "medium" },
+      "geometry": { "type": "Polygon", "coordinates": [[[75.778, 11.29], [75.786, 11.29], [75.786, 11.24], [75.779, 11.236], [75.775, 11.26], [75.778, 11.29]]] }
+    }
+  ]
+}

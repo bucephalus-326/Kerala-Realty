@@ -1,4 +1,13 @@
 import type { Listing, PropertyType, Purpose } from "@/data/listings";
+import { localities } from "@/data/places";
+
+/** Place-aware refinements, added from the follow-up question chips. */
+export interface Refinements {
+  maxMetroKm?: number;
+  maxItParkKm?: number;
+  avoidFlood?: boolean;
+  minSchools2km?: number;
+}
 
 export interface Filters {
   purpose: Purpose;
@@ -7,6 +16,7 @@ export interface Filters {
   budgetMax: number | null;
   beds: number | null;
   segment: "all" | "new" | "luxury";
+  refine: Refinements;
 }
 
 export const DEFAULT_FILTERS: Filters = {
@@ -16,6 +26,7 @@ export const DEFAULT_FILTERS: Filters = {
   budgetMax: null,
   beds: null,
   segment: "all",
+  refine: {},
 };
 
 export const BUDGETS: Record<Purpose, { label: string; value: number | null }[]> = {
@@ -38,11 +49,40 @@ export const BUDGETS: Record<Purpose, { label: string; value: number | null }[]>
 };
 
 export function isActive(f: Filters) {
-  return f.query.trim() !== "" || f.type !== "any" || f.budgetMax !== null || f.beds !== null || f.segment !== "all";
+  return (
+    f.query.trim() !== "" ||
+    f.type !== "any" ||
+    f.budgetMax !== null ||
+    f.beds !== null ||
+    f.segment !== "all" ||
+    Object.keys(f.refine).length > 0
+  );
 }
 
-/** Hard filters. A budget allows 10% stretch so near-misses still appear. */
-export function filterListings(all: Listing[], f: Filters): Listing[] {
+function matchesQuery(l: Listing, q: string) {
+  if (!q) return true;
+  const hay = [
+    l.locality,
+    l.city,
+    l.district,
+    l.title,
+    ...Object.values(l.nearby).map((n) => n?.name ?? ""),
+  ]
+    .join(" ")
+    .toLowerCase();
+  return hay.includes(q);
+}
+
+function passesRefinements(l: Listing, r: Refinements) {
+  if (r.maxMetroKm != null && !((l.nearby.metro?.km ?? 99) <= r.maxMetroKm)) return false;
+  if (r.maxItParkKm != null && !((l.nearby.it_park?.km ?? 99) <= r.maxItParkKm)) return false;
+  if (r.avoidFlood && l.flood.level !== "low") return false;
+  if (r.minSchools2km != null && l.counts.schools2km < r.minSchools2km) return false;
+  return true;
+}
+
+/** Hard filters before refinements. A budget allows 10% stretch so near-misses still appear. */
+function baseFilter(all: Listing[], f: Filters): Listing[] {
   const q = f.query.trim().toLowerCase().split(",")[0];
   return all.filter((l) => {
     if (l.purpose !== f.purpose) return false;
@@ -51,17 +91,17 @@ export function filterListings(all: Listing[], f: Filters): Listing[] {
     if (f.beds !== null && (l.beds ?? 0) < f.beds) return false;
     if (f.segment === "new" && !l.isNewProject) return false;
     if (f.segment === "luxury" && !l.isLuxury) return false;
-    if (q) {
-      const hay = `${l.locality} ${l.city} ${l.district} ${l.title} ${l.highlights.map((h) => h.label).join(" ")}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    return true;
+    return matchesQuery(l, q);
   });
 }
 
+export function filterListings(all: Listing[], f: Filters): Listing[] {
+  return baseFilter(all, f).filter((l) => passesRefinements(l, f.refine));
+}
+
 /**
- * Rank results and explain the top picks. This rule-based ranker is the
- * no-AI fallback; the AI agent in stage 5 produces the same shape.
+ * Rank results and explain the top picks. Rule-based: this is the no-AI
+ * fallback, and the AI agent in stage 5 returns the same shape.
  */
 export function rankListings(results: Listing[], f: Filters) {
   const scored = results.map((l) => {
@@ -81,11 +121,12 @@ export function rankListings(results: Listing[], f: Filters) {
         reasons.push("Slightly above budget, negotiable");
       }
     }
-    const nearest = [...l.highlights].sort((a, b) => a.km - b.km)[0];
-    if (nearest && nearest.km <= 1.5) {
+    const top = l.highlights[0];
+    if (top && top.km <= 1.5 && top.category !== "school") {
       score += 1.5;
-      reasons.push(`${nearest.km} km to ${nearest.label}`);
+      reasons.push(`${top.km} km to ${top.label}`);
     }
+    if (l.flood.level !== "low") score -= 1.5;
     if (l.postedBy.kind === "owner") {
       score += 0.5;
       reasons.push("Direct owner, no brokerage");
@@ -106,3 +147,58 @@ export function describeFilters(f: Filters, budgetLabel?: string) {
   if (budgetLabel && f.budgetMax) parts.push(budgetLabel.charAt(0).toLowerCase() + budgetLabel.slice(1));
   return parts.join(" ");
 }
+
+/* ───────────── Place-aware follow-up questions ───────────── */
+
+export type Suggestion =
+  | { kind: "refine"; id: string; label: string; count: number; patch: Refinements; icon: "metro" | "flood" | "it" | "school" }
+  | { kind: "compare"; id: string; label: string; a: string; b: string };
+
+export const REFINE_LABEL: Record<keyof Refinements, (v: number | boolean) => string> = {
+  maxMetroKm: (v) => `Within ${v} km of metro`,
+  maxItParkKm: (v) => `Within ${v} km of an IT park`,
+  avoidFlood: () => "Outside flood zones",
+  minSchools2km: (v) => `${v}+ schools within 2 km`,
+};
+
+/**
+ * Suggest the next question from facts about the current results.
+ * A suggestion only appears when it would actually narrow the list (and not empty it).
+ */
+export function suggestNext(f: Filters, all: Listing[]): Suggestion[] {
+  const pool = baseFilter(all, f).filter((l) => passesRefinements(l, f.refine));
+  const n = pool.length;
+  const out: Suggestion[] = [];
+  const useful = (c: number) => c > 0 && c < n;
+
+  if (f.refine.maxMetroKm == null) {
+    const c = pool.filter((l) => (l.nearby.metro?.km ?? 99) <= 1).length;
+    if (useful(c)) out.push({ kind: "refine", id: "metro", icon: "metro", count: c, patch: { maxMetroKm: 1 }, label: "Only homes within 1 km of a metro station" });
+  }
+  if (!f.refine.avoidFlood) {
+    const risky = pool.filter((l) => l.flood.level !== "low").length;
+    if (useful(n - risky)) out.push({ kind: "refine", id: "flood", icon: "flood", count: n - risky, patch: { avoidFlood: true }, label: `Hide ${risky} in monsoon flood-prone pockets` });
+  }
+  if (f.refine.maxItParkKm == null) {
+    const near = pool.filter((l) => (l.nearby.it_park?.km ?? 99) <= 3);
+    const park = near[0]?.nearby.it_park?.name;
+    if (park && useful(near.length)) out.push({ kind: "refine", id: "it", icon: "it", count: near.length, patch: { maxItParkKm: 3 }, label: `Within 3 km of ${park}` });
+  }
+  if (f.refine.minSchools2km == null && f.type !== "commercial") {
+    const c = pool.filter((l) => l.counts.schools2km >= 10).length;
+    if (useful(c)) out.push({ kind: "refine", id: "school", icon: "school", count: c, patch: { minSchools2km: 10 }, label: "Family-friendly: 10+ schools within 2 km" });
+  }
+
+  // Compare the searched locality with the nearest priced alternative.
+  const q = f.query.split(",")[0].trim().toLowerCase();
+  const here = localities.find((l) => l.name.toLowerCase() === q);
+  if (here) {
+    const alt = localities
+      .filter((l) => l.city === here.city && l.name !== here.name && l.listingCount >= 3)
+      .sort((a, b) => dist(a.coords, here.coords) - dist(b.coords, here.coords))[0];
+    if (alt) out.push({ kind: "compare", id: "compare", a: here.name, b: alt.name, label: `Compare ${here.name} with ${alt.name}` });
+  }
+  return out.slice(0, 4);
+}
+
+const dist = (a: [number, number], b: [number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]);

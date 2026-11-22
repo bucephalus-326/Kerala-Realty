@@ -11,6 +11,13 @@
 - Currency suggested from browser time zone (no tracking)
 - Map preview, localities, NRI concierge, owner/agent call to action, mobile tab bar
 
+## Stage 2: data (done)
+- 60 listings across Kochi, Trivandrum and Kozhikode (19 hand-written + 41 generated)
+- About 2,000 real places from OpenStreetMap: metro and Water Metro stops, rail, IT parks, schools, hospitals, malls, airports
+- Each listing knows its nearest places, school and hospital counts, and demo flood risk
+- Follow-up questions use these facts ("Only homes within 1 km of a metro", "Hide flood-prone pockets", "Compare Kakkanad with Edappally")
+- Price grid for the heatmap. See [`data/README.md`](data/README.md)
+
 ## Run
 ```
 cd web

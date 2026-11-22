@@ -54,7 +54,13 @@ export function Footer() {
           ))}
         </div>
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 pb-8 text-xs text-ink-3 md:px-6">
-          <p>© 2026 {site.name}. Demo build with sample listings.</p>
+          <p>
+            © 2026 {site.name}. Demo build with sample listings. Map data ©{" "}
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
+              OpenStreetMap contributors
+            </a>
+            .
+          </p>
           <p className="flex items-center gap-1">
             Made with <Heart className="h-3.5 w-3.5 fill-[#ff5a6e] text-[#ff5a6e]" /> in Kerala
           </p>

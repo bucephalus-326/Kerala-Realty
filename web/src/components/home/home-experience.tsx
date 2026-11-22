@@ -7,6 +7,7 @@ import {
   Briefcase,
   Building2,
   Check,
+  Cpu,
   ChevronDown,
   Gem,
   Globe2,
@@ -15,19 +16,35 @@ import {
   KeyRound,
   LandPlot,
   MapPin,
+  Scale,
+  School,
   Search,
   ShieldCheck,
   Sparkles,
   Train,
   UserCheck,
   Wallet,
+  Waves,
   X,
 } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
 import { LOCALITIES, listings, TYPE_LABEL, type PropertyType } from "@/data/listings";
 import { CURRENCIES, formatPrice, regionFromTimeZone } from "@/lib/currency";
-import { BUDGETS, DEFAULT_FILTERS, describeFilters, filterListings, isActive, rankListings, type Filters } from "@/lib/search";
+import { localities } from "@/data/places";
+import {
+  BUDGETS,
+  DEFAULT_FILTERS,
+  describeFilters,
+  filterListings,
+  isActive,
+  rankListings,
+  REFINE_LABEL,
+  suggestNext,
+  type Filters,
+  type Refinements,
+  type Suggestion,
+} from "@/lib/search";
 import { PropertyCard } from "../property/property-card";
 import { usePrefs } from "../providers";
 import { buttonClass, ReraBadge, SectionHeading } from "../ui/primitives";
@@ -69,7 +86,15 @@ export function HomeExperience() {
       <Hero draft={draft} setDraft={setDraft} onSearch={() => apply(draft)} onPrompt={applyPartial} />
       <CategoryRail applied={applied} onPick={applyPartial} />
       <div ref={resultsRef} className="scroll-mt-20">
-        <Results filters={applied} onReset={() => apply({ ...DEFAULT_FILTERS })} />
+        <Results
+          filters={applied}
+          onReset={() => apply({ ...DEFAULT_FILTERS })}
+          onRefine={(patch) => {
+            const refine = { ...applied.refine, ...patch };
+            (Object.keys(refine) as (keyof Refinements)[]).forEach((k) => refine[k] === undefined && delete refine[k]);
+            apply({ ...applied, refine });
+          }}
+        />
       </div>
     </>
   );
@@ -406,10 +431,19 @@ function CategoryRail({ applied, onPick }: { applied: Filters; onPick: (p: Parti
 
 /* ───────────────────────────── Results ───────────────────────────── */
 
-function Results({ filters, onReset }: { filters: Filters; onReset: () => void }) {
+function Results({
+  filters,
+  onReset,
+  onRefine,
+}: {
+  filters: Filters;
+  onReset: () => void;
+  onRefine: (r: Refinements) => void;
+}) {
   const active = isActive(filters);
   const results = useMemo(() => filterListings(listings, filters), [filters]);
   const ranked = useMemo(() => rankListings(results, filters), [results, filters]);
+  const suggestions = useMemo(() => suggestNext(filters, listings), [filters]);
   const budgetLabel = BUDGETS[filters.purpose].find((b) => b.value === filters.budgetMax)?.label;
 
   if (!active) {
@@ -419,7 +453,7 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
         <SectionHeading
           eyebrow="Featured"
           title="Handpicked verified properties"
-          sub="Fresh listings, checked by our team before they went live."
+          sub={`${listings.length} listings across Kochi, Trivandrum and Kozhikode, each checked by our team.`}
         />
         <Grid>
           {featured.map((r, i) => (
@@ -432,6 +466,7 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
 
   const picks = ranked.slice(0, 3);
   const rest = ranked.slice(3);
+  const activeRefinements = Object.entries(filters.refine) as [keyof Refinements, number | boolean][];
 
   return (
     <section id="featured" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-14 md:px-6">
@@ -443,6 +478,20 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
           <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight md:text-[30px]">
             {capitalize(describeFilters(filters, budgetLabel))}
           </h2>
+          {activeRefinements.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {activeRefinements.map(([k, v]) => (
+                <button
+                  key={k}
+                  onClick={() => onRefine({ [k]: undefined })}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-[13px] font-medium text-brand transition hover:bg-brand hover:text-brand-ink"
+                  aria-label={`Remove filter: ${REFINE_LABEL[k](v)}`}
+                >
+                  {REFINE_LABEL[k](v)} <X className="h-3.5 w-3.5" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <button onClick={onReset} className={buttonClass("outline", "sm")}>
           <X className="h-4 w-4" /> Clear search
@@ -469,7 +518,7 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
               </span>
               <div>
                 <p className="font-display text-lg font-semibold">Our recommendation</p>
-                <p className="text-xs text-ink-3">Ranked on budget fit, verification, commute and freshness</p>
+                <p className="text-xs text-ink-3">Ranked on budget fit, verification, commute, flood risk and freshness</p>
               </div>
             </div>
             <Grid cols3>
@@ -490,36 +539,91 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
             </>
           )}
 
-          <NextQuestions filters={filters} />
+          <NextQuestions suggestions={suggestions} onRefine={onRefine} />
         </>
       )}
     </section>
   );
 }
 
-/** Place-aware follow-ups. Stage 5 generates these from the nearby-places index. */
-function NextQuestions({ filters }: { filters: Filters }) {
-  const place = filters.query.split(",")[0] || "Kochi";
-  const qs = [
-    { icon: Train, t: `Only homes within 1 km of a metro station in ${place}?` },
-    { icon: Building2, t: `Compare ${place} with Edappally on price per sq.ft` },
-    { icon: ShieldCheck, t: "Hide properties in monsoon flood-prone pockets" },
-  ];
+const SUGGESTION_ICON = { metro: Train, flood: Waves, it: Cpu, school: School } as const;
+
+/** Follow-up questions computed from OpenStreetMap facts about the current results. */
+function NextQuestions({ suggestions, onRefine }: { suggestions: Suggestion[]; onRefine: (r: Refinements) => void }) {
+  const [compare, setCompare] = useState<{ a: string; b: string } | null>(null);
+  if (suggestions.length === 0) return null;
   return (
     <div className="mt-10 rounded-2xl border border-line bg-surface-strong p-5">
-      <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
+      <p className="mb-1 flex items-center gap-2 text-sm font-semibold">
         <Sparkles className="h-4 w-4 text-brand" /> Refine with a question
       </p>
+      <p className="mb-4 text-xs text-ink-3">Based on metro, IT park, school and flood data around these homes.</p>
       <div className="flex flex-wrap gap-2">
-        {qs.map(({ icon: I, t }) => (
-          <button
-            key={t}
-            className="inline-flex items-center gap-2 rounded-full border border-line-strong px-3.5 py-2 text-[13px] text-ink-2 transition hover:border-brand hover:text-ink"
-          >
-            <I className="h-4 w-4 text-water" /> {t} <ArrowRight className="h-3.5 w-3.5 opacity-50" />
-          </button>
-        ))}
+        {suggestions.map((s) => {
+          const Icon = s.kind === "compare" ? Scale : SUGGESTION_ICON[s.icon];
+          return (
+            <button
+              key={s.id}
+              onClick={() => (s.kind === "compare" ? setCompare(compare ? null : { a: s.a, b: s.b }) : onRefine(s.patch))}
+              aria-pressed={s.kind === "compare" ? compare !== null : undefined}
+              className="inline-flex items-center gap-2 rounded-full border border-line-strong px-3.5 py-2 text-left text-[13px] text-ink-2 transition hover:border-brand hover:text-ink"
+            >
+              <Icon className="h-4 w-4 shrink-0 text-water" /> {s.label}
+              {s.kind === "refine" && <span className="whitespace-nowrap rounded-full bg-muted px-1.5 text-[11px] font-semibold text-ink-3">{s.count} left</span>}
+              <ArrowRight className="h-3.5 w-3.5 opacity-50" />
+            </button>
+          );
+        })}
       </div>
+      {compare && <ComparePanel a={compare.a} b={compare.b} />}
+    </div>
+  );
+}
+
+function ComparePanel({ a, b }: { a: string; b: string }) {
+  const { currency } = usePrefs();
+  const rows = [a, b].map((name) => localities.find((l) => l.name === name)!);
+  const near = (n?: { name: string; km: number; status?: string } | null) =>
+    n ? `${n.name}${n.status ? " (u/c)" : ""} · ${n.km} km` : "—";
+  const metrics: { k: string; v: (r: (typeof rows)[number]) => string }[] = [
+    { k: "Avg. price / sq.ft", v: (r) => formatPrice(r.psf, currency, { compact: false }) },
+    { k: "Yearly change", v: (r) => `+${r.yoy}%` },
+    { k: "Nearest metro", v: (r) => near(r.nearby.metro) },
+    { k: "Nearest IT park", v: (r) => near(r.nearby.it_park) },
+    { k: "Schools within 2 km", v: (r) => String(r.schools2km) },
+    { k: "Verified listings", v: (r) => String(r.listingCount) },
+  ];
+  return (
+    <div className="rise mt-5 overflow-hidden rounded-xl border border-line">
+      <table className="w-full text-left text-[13px]">
+        <thead className="bg-muted text-ink-2">
+          <tr>
+            <th className="px-3 py-2 font-medium" scope="col">
+              <span className="sr-only">Metric</span>
+            </th>
+            {rows.map((r) => (
+              <th key={r.name} className="px-3 py-2 font-semibold text-ink" scope="col">
+                {r.name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {metrics.map((m) => (
+            <tr key={m.k} className="border-t border-line">
+              <th className="px-3 py-2 font-normal text-ink-3" scope="row">
+                {m.k}
+              </th>
+              {rows.map((r) => (
+                <td key={r.name} className="px-3 py-2 tabular-nums text-ink">
+                  {m.v(r)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="border-t border-line px-3 py-2 text-[11px] text-ink-3">Prices are indicative demo figures. Places © OpenStreetMap contributors.</p>
     </div>
   );
 }
