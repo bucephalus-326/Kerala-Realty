@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ───────────── Design tokens ─────────────
+   Light is the base; .dark overrides. Dark is the default theme. */
+:root {
+  --bg: #f4f6f2;
+  --bg-elevated: #ffffff;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-strong: #ffffff;
+  --surface-muted: #eaeee8;
+  --border: rgba(12, 32, 22, 0.1);
+  --border-strong: rgba(12, 32, 22, 0.18);
+  --ink: #0b1712;
+  --ink-2: #3a4a42;
+  --ink-3: #6a7a71;
+  --brand: #12a35a;
+  --brand-strong: #0b8a4a;
+  --brand-ink: #ffffff;
+  --brand-soft: rgba(18, 163, 90, 0.1);
+  --gold: #b98a2e;
+  --gold-soft: rgba(185, 138, 46, 0.12);
+  --water: #0e9f9a;
+  --danger: #d6453d;
+  --glow: rgba(18, 163, 90, 0);
+  --shadow: 0 1px 2px rgba(12, 32, 22, 0.06), 0 8px 24px -8px rgba(12, 32, 22, 0.14);
+  --shadow-lg: 0 2px 6px rgba(12, 32, 22, 0.06), 0 24px 60px -16px rgba(12, 32, 22, 0.22);
+  --hero-veil: linear-gradient(90deg, rgba(7, 15, 11, 0.86) 0%, rgba(7, 15, 11, 0.55) 45%, rgba(7, 15, 11, 0.15) 100%);
+}
+
+.dark {
+  --bg: #060a08;
+  --bg-elevated: #0b110e;
+  --surface: rgba(16, 24, 20, 0.72);
+  --surface-strong: #0f1713;
+  --surface-muted: #141e19;
+  --border: rgba(160, 255, 200, 0.08);
+  --border-strong: rgba(160, 255, 200, 0.16);
+  --ink: #eef5f0;
+  --ink-2: #b4c3ba;
+  --ink-3: #7d8e85;
+  --brand: #2bd47d;
+  --brand-strong: #22b86a;
+  --brand-ink: #03140a;
+  --brand-soft: rgba(43, 212, 125, 0.12);
+  --gold: #e3b95c;
+  --gold-soft: rgba(227, 185, 92, 0.12);
+  --water: #2dd4bf;
+  --danger: #ff6b61;
+  --glow: rgba(43, 212, 125, 0.35);
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 30px 80px -20px rgba(0, 0, 0, 0.85);
+  --hero-veil: linear-gradient(90deg, rgba(6, 10, 8, 0.92) 0%, rgba(6, 10, 8, 0.6) 45%, rgba(6, 10, 8, 0.2) 100%);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-muted: var(--surface-muted);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-water: var(--water);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --shadow-card: var(--shadow);
+  --shadow-float: var(--shadow-lg);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+/* Glass panel used for floating UI over imagery */
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* Near-opaque bar for sticky chrome (navbar, tab bar) */
+.glass-bar {
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px) saturate(150%);
+}
+
+/* Always-dark glass for UI sitting on photos (readable in both themes) */
+.glass-dark {
+  background: rgba(8, 14, 11, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px) saturate(140%);
+  color: #eef5f0;
+}
+
+.text-gradient {
+  background: linear-gradient(100deg, #3ee58e 0%, #2dd4bf 55%, #9bf0c4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glow-brand {
+  box-shadow: 0 0 0 1px var(--brand), 0 0 24px -4px var(--glow);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.pulse-ring {
+  animation: pulse-ring 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+@keyframes dash-flow {
+  to { stroke-dashoffset: -40; }
+}
+.dash-flow {
+  animation: dash-flow 2.4s linear infinite;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring, .dash-flow, .rise { animation: none; }
+  html { scroll-behavior: auto; }
+}
