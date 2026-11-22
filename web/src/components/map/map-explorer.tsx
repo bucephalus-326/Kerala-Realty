@@ -4,6 +4,7 @@ import { MapboxOverlay } from "@deck.gl/mapbox";
 import clsx from "clsx";
 import {
   Box,
+  CalendarPlus,
   ChevronUp,
   Compass,
   Layers as LayersIcon,
@@ -32,6 +33,7 @@ import { inPolygon, km } from "@/lib/geo";
 import { BUDGETS, DEFAULT_FILTERS, filterListings, rankListings } from "@/lib/search";
 import { usePrefs } from "../providers";
 import { buttonClass } from "../ui/primitives";
+import { VisitDialog } from "../visits/visit-dialog";
 import { buildLayers, type MetroLine, POI_STYLE, PRICE_DOMAIN, PRICE_RAMP } from "./layers";
 import { loadStyle } from "./map-style";
 
@@ -646,6 +648,7 @@ function MiniCard({ listing: l, active, onClick }: { listing: Listing; active: b
 
 function SelectedCard({ listing: l, links, onClose }: { listing: Listing; links: string[]; onClose: () => void }) {
   const { currency } = usePrefs();
+  const [booking, setBooking] = useState(false);
   const wa = encodeURIComponent(`Hi, I'm interested in "${l.title}" (${l.id}) in ${l.locality}. Is it available?`);
   return (
     <article className="glass overflow-hidden rounded-3xl shadow-float">
@@ -679,15 +682,21 @@ function SelectedCard({ listing: l, links, onClose }: { listing: Listing; links:
             <Waves className="h-3.5 w-3.5" /> {l.flood.zone} · demo flood layer
           </p>
         )}
-        <a
-          href={`https://wa.me/${site.whatsapp}?text=${wa}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={clsx(buttonClass("whatsapp", "md"), "w-full")}
-        >
-          <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
-        </a>
+        <div className="grid grid-cols-[auto_1fr] gap-2">
+          <button onClick={() => setBooking(true)} className={buttonClass("outline", "md")}>
+            <CalendarPlus className="h-4 w-4" /> Visit
+          </button>
+          <a
+            href={`https://wa.me/${site.whatsapp}?text=${wa}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonClass("whatsapp", "md")}
+          >
+            <MessageCircle className="h-4 w-4" /> WhatsApp
+          </a>
+        </div>
       </div>
+      {booking && <VisitDialog listing={l} onClose={() => setBooking(false)} />}
     </article>
   );
 }

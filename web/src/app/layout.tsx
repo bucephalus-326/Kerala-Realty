@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import "./globals.css";
+import { ConsentBanner } from "@/components/consent/consent-banner";
 import { Providers } from "@/components/providers";
 import { site } from "@/config/site";
 
@@ -23,7 +24,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable}`}>
       <body className="min-h-dvh bg-bg text-ink">
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <ConsentBanner />
+        </Providers>
       </body>
     </html>
   );

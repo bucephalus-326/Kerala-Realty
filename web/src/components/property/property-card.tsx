@@ -4,7 +4,7 @@ import clsx from "clsx";
 import {
   Bath,
   BedDouble,
-  Box,
+  CalendarPlus,
   Bus,
   Cpu,
   GraduationCap,
@@ -25,10 +25,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { site } from "@/config/site";
 import { TYPE_LABEL, type Listing, type PoiCategory } from "@/data/listings";
 import { formatPrice } from "@/lib/currency";
 import { usePrefs } from "../providers";
+import { VisitDialog } from "../visits/visit-dialog";
 import { buttonClass, ReraBadge } from "../ui/primitives";
 
 const SQFT_PER_CENT = 435.6;
@@ -56,6 +58,7 @@ export function PropertyCard({
   priority?: boolean;
 }) {
   const { currency, landUnit, saved, toggleSaved } = usePrefs();
+  const [booking, setBooking] = useState(false);
   const isSaved = saved.has(l.id);
   const isRent = l.purpose === "rent";
 
@@ -206,8 +209,8 @@ export function PropertyCard({
         )}
 
         <div className="mt-auto grid grid-cols-[auto_1fr] gap-2 pt-1">
-          <button className={buttonClass("outline", "sm")} aria-label={`3D tour of ${l.title}`}>
-            <Box className="h-4 w-4" /> Tour
+          <button onClick={() => setBooking(true)} className={buttonClass("outline", "sm")} aria-label={`Book a visit to ${l.title}`}>
+            <CalendarPlus className="h-4 w-4" /> Visit
           </button>
           <a
             href={`https://wa.me/${site.whatsapp}?text=${waText}`}
@@ -219,6 +222,7 @@ export function PropertyCard({
           </a>
         </div>
       </div>
+      {booking && <VisitDialog listing={l} onClose={() => setBooking(false)} />}
     </article>
   );
 }

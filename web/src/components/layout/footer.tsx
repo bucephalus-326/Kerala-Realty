@@ -2,6 +2,7 @@ import { Cpu, Handshake, Heart, Home, Map, Search, ShieldCheck, User, Vault } fr
 import Link from "next/link";
 import { site } from "@/config/site";
 import { Logo } from "../ui/primitives";
+import { PrivacyLinks } from "./privacy-links";
 
 const TRUST = [
   { icon: ShieldCheck, t: "K-RERA checked", s: "Every project verified" },
@@ -61,6 +62,7 @@ export function Footer() {
             </a>
             .
           </p>
+          <PrivacyLinks />
           <p className="flex items-center gap-1">
             Made with <Heart className="h-3.5 w-3.5 fill-[#ff5a6e] text-[#ff5a6e]" /> in Kerala
           </p>
@@ -76,7 +78,7 @@ export function MobileTabBar() {
     { icon: Search, l: "Search", href: "/#featured" },
     { icon: Map, l: "Map", href: "/map" },
     { icon: Heart, l: "Saved", href: "/#featured" },
-    { icon: User, l: "Account", href: "/#signin" },
+    { icon: User, l: "Account", href: "/account" },
   ];
   return (
     <nav className="glass-bar fixed inset-x-0 bottom-0 z-40 border-x-0 border-b-0 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Quick">

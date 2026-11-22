@@ -12,7 +12,7 @@ import { buttonClass, Logo } from "../ui/primitives";
 export function Navbar({ solid = false, active = "Buy" }: { solid?: boolean; active?: string }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const { saved } = usePrefs();
+  const { saved, session } = usePrefs();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -72,7 +72,7 @@ export function Navbar({ solid = false, active = "Buy" }: { solid?: boolean; act
           <ThemeToggle onPhoto={onPhoto} />
 
           <Link
-            href="/#list"
+            href="/signin?mode=register&role=owner"
             className={clsx(
               buttonClass("outline", "sm"),
               "max-md:hidden",
@@ -81,9 +81,22 @@ export function Navbar({ solid = false, active = "Buy" }: { solid?: boolean; act
           >
             <Plus className="h-4 w-4" /> List Property
           </Link>
-          <Link href="/#signin" className={clsx(buttonClass("primary", "sm"), "max-sm:hidden")}>
-            Sign in
-          </Link>
+          {session ? (
+            <Link
+              href="/account"
+              className="flex items-center gap-2 rounded-full border border-line-strong py-1 pl-1 pr-3 text-sm font-medium transition hover:border-brand max-sm:hidden"
+              aria-label="My account"
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-xs font-bold text-brand-ink">
+                {session.user.name.charAt(0)}
+              </span>
+              <span className={onPhoto ? "text-white" : "text-ink"}>{session.user.name.split(" ")[0]}</span>
+            </Link>
+          ) : (
+            <Link href="/signin" className={clsx(buttonClass("primary", "sm"), "max-sm:hidden")}>
+              Sign in
+            </Link>
+          )}
 
           <button
             className={clsx("grid h-9 w-9 place-items-center rounded-lg lg:hidden", onPhoto ? "text-white" : "text-ink")}
@@ -111,11 +124,11 @@ export function Navbar({ solid = false, active = "Buy" }: { solid?: boolean; act
             ))}
           </nav>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Link href="/#list" onClick={() => setOpen(false)} className={buttonClass("outline", "md")}>
+            <Link href="/signin?mode=register&role=owner" onClick={() => setOpen(false)} className={buttonClass("outline", "md")}>
               <Plus className="h-4 w-4" /> List Property
             </Link>
-            <Link href="/#signin" onClick={() => setOpen(false)} className={buttonClass("primary", "md")}>
-              Sign in
+            <Link href={session ? "/account" : "/signin"} onClick={() => setOpen(false)} className={buttonClass("primary", "md")}>
+              {session ? "My account" : "Sign in"}
             </Link>
           </div>
         </div>

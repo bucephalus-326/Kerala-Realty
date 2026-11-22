@@ -378,10 +378,10 @@ export function ListPropertyCta() {
             ))}
           </ol>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/#signin" className={buttonClass("primary", "lg")}>
+            <Link href="/signin?mode=register&role=owner" className={buttonClass("primary", "lg")}>
               Start listing <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/#signin" className={buttonClass("outline", "lg")}>
+            <Link href="/signin?mode=register&role=agent" className={buttonClass("outline", "lg")}>
               I&apos;m an agent / builder
             </Link>
           </div>
