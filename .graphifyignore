@@ -1,0 +1,7 @@
+# Generated or bulky files that add noise to the code graph
+web/src/data/generated/
+data/raw/
+docs/screenshots/
+web/public/img/
+api/evals/report-*.json
+**/package-lock.json

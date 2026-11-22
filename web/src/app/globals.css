@@ -1,0 +1,258 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ───────────── Design tokens ─────────────
+   Light is the base; .dark overrides. Dark is the default theme. */
+:root {
+  --bg: #f4f6f2;
+  --bg-elevated: #ffffff;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-strong: #ffffff;
+  --surface-muted: #eaeee8;
+  --border: rgba(12, 32, 22, 0.1);
+  --border-strong: rgba(12, 32, 22, 0.18);
+  --ink: #0b1712;
+  --ink-2: #3a4a42;
+  --ink-3: #6a7a71;
+  --brand: #12a35a;
+  --brand-strong: #0b8a4a;
+  --brand-ink: #ffffff;
+  --brand-soft: rgba(18, 163, 90, 0.1);
+  --gold: #b98a2e;
+  --gold-soft: rgba(185, 138, 46, 0.12);
+  --water: #0e9f9a;
+  --danger: #d6453d;
+  --glow: rgba(18, 163, 90, 0);
+  --shadow: 0 1px 2px rgba(12, 32, 22, 0.06), 0 8px 24px -8px rgba(12, 32, 22, 0.14);
+  --shadow-lg: 0 2px 6px rgba(12, 32, 22, 0.06), 0 24px 60px -16px rgba(12, 32, 22, 0.22);
+  --hero-veil: linear-gradient(90deg, rgba(7, 15, 11, 0.86) 0%, rgba(7, 15, 11, 0.55) 45%, rgba(7, 15, 11, 0.15) 100%);
+}
+
+.dark {
+  --bg: #060a08;
+  --bg-elevated: #0b110e;
+  --surface: rgba(16, 24, 20, 0.72);
+  --surface-strong: #0f1713;
+  --surface-muted: #141e19;
+  --border: rgba(160, 255, 200, 0.08);
+  --border-strong: rgba(160, 255, 200, 0.16);
+  --ink: #eef5f0;
+  --ink-2: #b4c3ba;
+  --ink-3: #7d8e85;
+  --brand: #2bd47d;
+  --brand-strong: #22b86a;
+  --brand-ink: #03140a;
+  --brand-soft: rgba(43, 212, 125, 0.12);
+  --gold: #e3b95c;
+  --gold-soft: rgba(227, 185, 92, 0.12);
+  --water: #2dd4bf;
+  --danger: #ff6b61;
+  --glow: rgba(43, 212, 125, 0.35);
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 30px 80px -20px rgba(0, 0, 0, 0.85);
+  --hero-veil: linear-gradient(90deg, rgba(6, 10, 8, 0.92) 0%, rgba(6, 10, 8, 0.6) 45%, rgba(6, 10, 8, 0.2) 100%);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-muted: var(--surface-muted);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-water: var(--water);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --shadow-card: var(--shadow);
+  --shadow-float: var(--shadow-lg);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+/* Glass panel used for floating UI over imagery */
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* Near-opaque bar for sticky chrome (navbar, tab bar) */
+.glass-bar {
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px) saturate(150%);
+}
+
+/* Always-dark glass for UI sitting on photos (readable in both themes) */
+.glass-dark {
+  background: rgba(8, 14, 11, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px) saturate(140%);
+  color: #eef5f0;
+}
+
+.text-gradient {
+  background: linear-gradient(100deg, #3ee58e 0%, #2dd4bf 55%, #9bf0c4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glow-brand {
+  box-shadow: 0 0 0 1px var(--brand), 0 0 24px -4px var(--glow);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.pulse-ring {
+  animation: pulse-ring 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+@keyframes dash-flow {
+  to { stroke-dashoffset: -40; }
+}
+.dash-flow {
+  animation: dash-flow 2.4s linear infinite;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring, .dash-flow, .rise { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ───────────── Map price pills ───────────── */
+.map-pill {
+  position: relative;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font: 600 12px/1 var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  color: #eafff3;
+  background: rgba(6, 18, 12, 0.88);
+  border: 1px solid rgba(62, 229, 142, 0.55);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 6px 18px -6px rgba(62, 229, 142, 0.55);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+.map-pill::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 8px;
+  height: 8px;
+  transform: translateX(-50%) rotate(45deg);
+  background: inherit;
+  border-right: inherit;
+  border-bottom: inherit;
+}
+.map-pill:hover { transform: translateY(-2px) scale(1.05); z-index: 2; }
+.map-pill[data-tier="luxury"] { border-color: rgba(227, 185, 92, 0.75); box-shadow: 0 6px 18px -6px rgba(227, 185, 92, 0.6); }
+.map-pill[data-tier="flood"] { border-color: rgba(255, 107, 97, 0.7); }
+.map-pill[data-selected="true"] {
+  background: #3ee58e;
+  color: #03140a;
+  border-color: #3ee58e;
+  transform: translateY(-3px) scale(1.12);
+  z-index: 3;
+  box-shadow: 0 0 0 4px rgba(62, 229, 142, 0.25), 0 10px 30px -6px rgba(62, 229, 142, 0.9);
+}
+:root:not(.dark) .map-pill:not([data-selected="true"]):not([data-compact="true"]) {
+  background: rgba(255, 255, 255, 0.94);
+  color: #0b1712;
+  box-shadow: 0 6px 18px -8px rgba(12, 32, 22, 0.35);
+}
+.map-pill[data-compact="true"] {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  font-size: 0;
+  background: #3ee58e;
+  border: 2px solid #05080a;
+  box-shadow: 0 0 0 3px rgba(62, 229, 142, 0.3), 0 0 14px rgba(62, 229, 142, 0.8);
+}
+.map-pill[data-compact="true"][data-tier="luxury"] { background: #e3b95c; box-shadow: 0 0 0 3px rgba(227, 185, 92, 0.3), 0 0 14px rgba(227, 185, 92, 0.8); }
+.map-pill[data-compact="true"][data-tier="flood"] { background: #ff8a70; }
+.map-pill[data-compact="true"]::after { display: none; }
+.map-pill[data-compact="true"]:hover,
+.map-pill[data-compact="true"]:focus-visible {
+  width: auto;
+  height: auto;
+  padding: 5px 10px;
+  font-size: 12px;
+  background: rgba(6, 18, 12, 0.92);
+  border: 1px solid rgba(62, 229, 142, 0.55);
+}
+/* Keep HTML markers above the deck.gl canvas. */
+.maplibregl-marker { z-index: 3; }
+.maplibregl-ctrl-attrib { font-size: 10px; }
+/* On phones the bottom of the map belongs to the sheet and draw button; credit goes top-right. */
+@media (max-width: 767px) {
+  .maplibregl-map .maplibregl-ctrl-bottom-right { top: 60px; bottom: auto; }
+}
+
+/* Portal map pin */
+.pin-marker {
+  width: 28px;
+  height: 38px;
+  cursor: grab;
+  background: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 38'%3E%3Cpath d='M14 0C6.3 0 0 6.2 0 13.9 0 24.3 14 38 14 38s14-13.7 14-24.1C28 6.2 21.7 0 14 0z' fill='%233ee58e'/%3E%3Ccircle cx='14' cy='14' r='5.5' fill='%2303140a'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+}
+.pin-marker:active { cursor: grabbing; }

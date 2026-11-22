@@ -1,0 +1,22 @@
+[
+  { "q": "50 lakh flat in kakkanad" },
+  { "q": "2bhk flat near infopark under 60L" },
+  { "q": "villa in edappally below 2 crore" },
+  { "q": "flat for rent in kakkanad 25k" },
+  { "q": "plots in trivandrum" },
+  { "q": "kakkanad il 50 lakh flat venam" },
+  { "q": "luxury villa with pool in kochi" },
+  { "q": "flat near metro in kochi under 80 lakh" },
+  { "q": "family home near good schools in kakkanad" },
+  { "q": "villa in kochi, no flood areas please" },
+  { "q": "only near metro", "previous": { "purpose": "buy", "type": "apartment", "locality": "Kakkanad", "budgetMax": 5000000 } },
+  { "q": "avoid flood areas", "previous": { "purpose": "buy", "type": "villa", "city": "Kochi" } },
+  { "q": "compare kakkanad and edappally" },
+  { "q": "is kakkanad a good place to invest?" },
+  { "q": "what is a fair price for a 3bhk in vyttila?" },
+  { "q": "which flat near technopark is cheapest?" },
+  { "q": "how far is the nearest metro from the cheapest 2bhk in edappally?" },
+  { "q": "I work at Infopark and have 70 lakh, what should I buy?" },
+  { "q": "my parents need a quiet house near a hospital in trivandrum" },
+  { "q": "is there anything under 20 lakh in vyttila?" }
+]

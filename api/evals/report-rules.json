@@ -1,0 +1,23 @@
+{
+  "mode": "rules",
+  "at": "2026-11-22T19:22:46.064Z",
+  "cases": 30,
+  "passed": 30,
+  "passRate": 1,
+  "fields": {
+    "intent": 1,
+    "purpose": 1,
+    "type": 1,
+    "budgetMax": 1,
+    "locality": 1,
+    "beds": 1,
+    "near": 1,
+    "city": 1,
+    "maxMetroKm": 1,
+    "minSchools2km": 1,
+    "maxHospitalKm": 1,
+    "avoidFlood": 1,
+    "compare": 1
+  },
+  "failures": []
+}

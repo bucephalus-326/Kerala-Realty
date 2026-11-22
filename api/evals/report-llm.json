@@ -1,0 +1,37 @@
+{
+  "mode": "llm",
+  "at": "2026-11-22T15:14:21.684Z",
+  "cases": 30,
+  "passed": 29,
+  "passRate": 0.967,
+  "fields": {
+    "intent": 0.967,
+    "purpose": 0.8,
+    "type": 0.955,
+    "budgetMax": 1,
+    "locality": 0.929,
+    "beds": 0.667,
+    "near": 1,
+    "city": 1,
+    "maxMetroKm": 1,
+    "minSchools2km": 1,
+    "maxHospitalKm": 1,
+    "avoidFlood": 1,
+    "compare": 1
+  },
+  "failures": [
+    {
+      "q": "edapally il 2bhk vaadaka veedu",
+      "pass": false,
+      "misses": [
+        "error: gemini/gemini-flash-lite-latest: HTTP 503; gemini/gemini-flash-lite-latest: HTTP 503; gemini/gemini-flash-latest: HTTP 503; gemini/gemini-flash-latest: timeout;",
+        "intent: expected \"search\", got undefined",
+        "purpose: expected \"rent\", got undefined",
+        "beds: expected 2, got undefined",
+        "type: expected \"villa\", got undefined",
+        "locality: expected \"Edappally\", got undefined"
+      ],
+      "ms": 33111
+    }
+  ]
+}

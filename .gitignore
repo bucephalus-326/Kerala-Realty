@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+.DS_Store
+*.tsbuildinfo
+
+# Graphify code graph (rebuild with: graphify update .)
+graphify-out/

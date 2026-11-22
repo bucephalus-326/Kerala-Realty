@@ -1,0 +1,101 @@
+import { Router } from "express";
+import rateLimit from "express-rate-limit";
+import { z } from "zod";
+import { requirePermission } from "../auth/rbac.js";
+import { notFound, parse } from "../lib/http.js";
+import { Listing, ListingView } from "../models/listing.js";
+import { REPORT_REASONS, Report } from "../models/admin.js";
+import { audit } from "../lib/audit.js";
+
+export const listingsRouter = Router();
+
+const querySchema = z.object({
+  purpose: z.enum(["buy", "rent"]).optional(),
+  type: z.enum(["villa", "house", "apartment", "plot", "commercial"]).optional(),
+  budgetMax: z.coerce.number().positive().optional(),
+  city: z.string().max(40).optional(),
+  q: z.string().max(60).optional(),
+  ids: z.string().max(2000).optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(24),
+  page: z.coerce.number().int().min(1).default(1),
+});
+
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+listingsRouter.get("/", requirePermission("listings:read"), async (req, res) => {
+  const q = parse(querySchema, req.query);
+  const filter: Record<string, unknown> = { status: "published" };
+  if (q.purpose) filter.purpose = q.purpose;
+  if (q.type) filter.type = q.type;
+  if (q.city) filter.city = q.city;
+  if (q.budgetMax) filter.price = { $lte: q.budgetMax * 1.1 };
+  if (q.ids) filter._id = { $in: q.ids.split(",").slice(0, 100) };
+  if (q.q) {
+    const rx = new RegExp(escape(q.q), "i");
+    filter.$or = [{ locality: rx }, { city: rx }, { title: rx }];
+  }
+  const [items, total] = await Promise.all([
+    Listing.find(filter).sort({ postedAt: -1 }).skip((q.page - 1) * q.limit).limit(q.limit).lean(),
+    Listing.countDocuments(filter),
+  ]);
+  res.json({ items: items.map(publicView), total, page: q.page });
+});
+
+/** Count a page view once per visitor per day. Never fails the page. */
+const viewLimiter = rateLimit({ windowMs: 10 * 60_000, limit: 120, standardHeaders: "draft-7", legacyHeaders: false });
+
+listingsRouter.post("/:id/view", viewLimiter, async (req, res) => {
+  const id = String(req.params.id);
+  // Only real, live listings are counted; made-up ids never create rows.
+  if (!/^L\d{3,6}$/.test(id) || !(await Listing.exists({ _id: id, status: "published" }))) return res.json({ ok: true });
+  const visitor = req.user ? `u:${req.user.id}` : `a:${String(req.cookies?.kr_anon ?? req.ip)}`;
+  await ListingView.updateOne(
+    { listingId: id, day: new Date().toISOString().slice(0, 10), visitor },
+    { $setOnInsert: { listingId: id } },
+    { upsert: true },
+  ).catch(() => {});
+  res.json({ ok: true });
+});
+
+listingsRouter.get("/:id", requirePermission("listings:read"), async (req, res) => {
+  const l = await Listing.findOne({ _id: String(req.params.id), status: "published" }).lean();
+  if (!l) throw notFound("Listing");
+  res.json(publicView(l));
+});
+
+/* ───────────── Reports from visitors ───────────── */
+
+const reportLimiter = rateLimit({ windowMs: 60 * 60_000, limit: 10, standardHeaders: "draft-7", legacyHeaders: false });
+const reportSchema = z.object({ reason: z.enum(REPORT_REASONS), details: z.string().trim().max(1000).optional() });
+
+listingsRouter.post("/:id/report", requirePermission("listings:read"), reportLimiter, async (req, res) => {
+  const id = String(req.params.id);
+  const body = parse(reportSchema, req.body);
+  if (!(await Listing.exists({ _id: id, status: "published" }))) throw notFound("Listing");
+  const reporterKey = req.user ? `u:${req.user.id}` : `a:${String(req.cookies?.kr_anon ?? req.ip)}`;
+  try {
+    await Report.create({ listingId: id, ...body, reporterId: req.user?.id, reporterKey });
+  } catch (e) {
+    if ((e as { code?: number }).code === 11000) return res.status(200).json({ ok: true, duplicate: true }); // already reported by this visitor
+    throw e;
+  }
+  await audit(req, "report.create", id, { reason: body.reason });
+  res.status(201).json({ ok: true });
+});
+
+/** Public shape: hides vault document ids and moderation notes. */
+export function publicView(l: object) {
+  const { documentIds, reviewNote, submittedAt, ...rest } = toClient(l) as Record<string, unknown>;
+  void documentIds;
+  void reviewNote;
+  void submittedAt;
+  return rest;
+}
+
+/** Back to the web app's shape: `id` and `coords` instead of `_id` and GeoJSON. */
+export function toClient(l: object) {
+  const { _id, location, ownerId, __v, ...rest } = l as Record<string, unknown> & { location?: { coordinates: number[] } | null };
+  void ownerId;
+  void __v;
+  return { id: _id, coords: location?.coordinates, ...rest };
+}
