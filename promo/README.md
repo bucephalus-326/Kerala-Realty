@@ -1,6 +1,6 @@
 # Promo reel
 
-A 31-second 9:16 promotional reel built from the real app plus motion graphics. The script, shot list, Google Flow prompts and sound brief are in [BRIEF.md](BRIEF.md).
+A 42-second 9:16 promotional reel built from the real app plus motion graphics. The script, shot list, Google Flow prompts and sound brief are in [BRIEF.md](BRIEF.md).
 
 ## How it's made
 
@@ -8,11 +8,11 @@ A 31-second 9:16 promotional reel built from the real app plus motion graphics. 
    ```bash
    node capture/shots.cjs assets && node capture/fix.cjs assets && node capture/badge.cjs assets/badge-hi.png
    ```
-2. **Compose** (`compose/`): `reel.js` draws every frame on a canvas from its time `t`. Timing lives in `compose/timeline.js`: voice-over starts, captions and cut points. Preview single moments:
+2. **Compose** (`compose/`): `reel.js` draws every frame on a canvas from its time `t`. Timing lives in `compose/timeline.js`: voice-over starts, captions, Flow clip windows, and `REMAP`, which maps final-video time onto the scene choreography so cuts land on the recorded words. Preview single moments:
    ```bash
    node render.cjs stills 3.3,12.8,29.5   # → out/still-*.jpg
    ```
-3. **Google Flow clips**: put `flowA.mp4` / `flowB.mp4` / `flowC.mp4` in `incoming/`, then run `./flow.sh`. They replace the stand-in opening and portal shots.
+3. **Google Flow clips**: put `flowA.mp4` / `flowB.mp4` / `flowC.mp4` in `incoming/`, then run `./flow.sh`. A plays under the opening, B's grid dissolves into the 3D map, C is the reaction shot after Hella appears (windows in `FLOW` in `timeline.js`).
 4. **Render**:
    ```bash
    node render.cjs video
