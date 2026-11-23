@@ -218,11 +218,22 @@ function captions(t) {
 }
 
 /* ───────── scenes ───────── */
-const flowFrame = (name, t, start, offset = 0) => { const s = SEQ[name]; if (!s?.length) return null; return s[Math.min(s.length - 1, Math.max(0, Math.floor((t - start + offset) * 30)))]; };
+let REAL = 0; // time in the final video; scene functions get the remapped draft time
+/** The Flow clip frame for the current real time, or null outside its window or if the clip is missing. */
+function flowAt(key) {
+  const c = FLOW[key], s = SEQ["flow" + key];
+  if (!c || !s?.length || REAL < c.from || REAL >= c.to) return null;
+  return s[Math.min(s.length - 1, Math.max(0, Math.floor((REAL - c.from + c.clipAt) * 30)))];
+}
+function remap(T) {
+  const k = REMAP;
+  for (let i = 1; i < k.length; i++) if (T <= k[i][0]) { const [a0, b0] = k[i - 1], [a1, b1] = k[i]; return a1 === a0 ? b1 : b0 + ((T - a0) / (a1 - a0)) * (b1 - b0); }
+  return k.at(-1)[1];
+}
 
 // S1 0.0–2.7: hook. Flow clip A, or the backwaters photo with a light grid sweeping the water.
 function s1(t) {
-  const fa = flowFrame("flowA", t, 0, 0.5);
+  const fa = flowAt("A");
   if (fa) cover(fa, { s: lerp(1.04, 1.12, t / 2.7) });
   else {
     cover(IMG.backwater, { s: lerp(1.22, 1.38, eOutCubic(t / 2.7)), fx: 0.6, fy: 0.55 });
@@ -504,8 +515,6 @@ function s7(t) {
 
 // S8 26.2–28.1: the portal. Flow clip B, or a doorway of light that opens and pulls the camera through.
 function s8(t) {
-  const fb = flowFrame("flowB", t, 26.2, 2.5);
-  if (fb) { cover(fb, { s: lerp(1.0, 1.15, prog(t, 26.2, 28.0)) }); flash(t, 27.95, 0.3, 1); return; }
   g.fillStyle = "#010207"; g.fillRect(0, 0, W, H);
   dust(t, 0.5);
   const push = eIn(prog(t, 27.2, 28.0)), sc = 1 + push * 9, cx = W / 2, cy = 900;
@@ -556,8 +565,26 @@ function sEnd(t) {
   flash(t, 28.02, 0.5, 0.7);
 }
 
+/* Flow B (the grid on the water dissolves into the map) and Flow C (her face lights up) play over the scenes. */
+function flowOverlays() {
+  const fb = flowAt("B");
+  if (fb) {
+    const k = prog(REAL, FLOW.B.from, FLOW.B.to);
+    cover(fb, { s: lerp(1.04, 1.4, eIn(k)), a: 1 - prog(REAL, 9.55, 9.95) });
+    flash(REAL, 8.8, 0.2, 0.5);
+  }
+  const fc = flowAt("C");
+  if (fc) {
+    const a = prog(REAL, 19.4, 19.55) * (1 - prog(REAL, 20.55, 20.75));
+    cover(fc, { s: lerp(1.0, 1.07, prog(REAL, 19.4, 20.75)), a });
+    g.save(); g.globalAlpha = a * 0.25; g.globalCompositeOperation = "soft-light"; g.fillStyle = "#0b4a6e"; g.fillRect(0, 0, W, H); g.restore();
+    g.save(); g.globalAlpha = a; sparkles(REAL, W / 2, 760, 360, 19.5); g.restore();
+  }
+}
+
 /* ───────── frame ───────── */
-window.renderFrame = function (t) {
+window.renderFrame = function (T) {
+  REAL = T; const t = remap(T);
   g.setLineDash([]); g.globalAlpha = 1; g.globalCompositeOperation = "source-over"; g.filter = "none"; g.letterSpacing = "0px";
   g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
   if (t < 2.7) s1(t);
@@ -571,7 +598,8 @@ window.renderFrame = function (t) {
   else if (t < 28.0) s8(t);
   else sEnd(t);
   // cut flashes
-  flash(t, 2.7, 0.18, 0.55); flash(t, 6.0, 0.18, 0.4); flash(t, 18.0, 0.15, 0.35); flash(t, 23.6, 0.12, 0.3);
-  captions(t);
+  flash(t, 2.7, 0.18, 0.55); flash(t, 18.0, 0.15, 0.35); flash(t, 23.6, 0.12, 0.3);
+  flowOverlays();
+  captions(REAL);
   finish(t);
 };
